@@ -53,7 +53,8 @@ Options:
   -output FILE      Specify custom output file for -get-spec-list-csv
   -get-specs        Download all specification files
   -directory DIR    Specify directory for downloaded specs (use with -get-specs)
-  -debug            Show debug information (matched patterns)```
+  -debug            Show debug information (matched patterns)
+```
 
 # process.sh
 This is a tool for integration with [GitHub Actions](https://docs.github.com/en/actions)
