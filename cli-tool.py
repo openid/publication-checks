@@ -155,9 +155,80 @@ def content_state(content, debug=False):
     
     return result
 
+def content_notices(content, debug=False):
+    result = {
+        "notices": False, 
+        "copyright_year": None,
+        "published_year": None,
+        "years_match": False,
+        "license_text_present": False, 
+        "debug": {}
+    }
+    
+    # First check for notices and copyright
+    for notice_type in ['NOTICES', 'COPYRIGHT', 'PUBLISHED_DATE']:
+        pattern = PATTERNS[notice_type]
+        match = re.search(pattern, content)
+        
+        if notice_type == 'NOTICES':
+            result["notices"] = bool(match)
+        elif notice_type == 'COPYRIGHT' and match:
+            result["copyright_year"] = int(match.group(1))  # Convert to int for comparison
+            
+            # Find the license text after the copyright statement
+            copyright_pos = match.end()
+            search_text = content[copyright_pos:copyright_pos + 10000]
+            
+            # Check if the required license text is present
+            license_match = re.search(PATTERNS['LICENSE_TEXT'], search_text, re.IGNORECASE)
+            result["license_text_present"] = bool(license_match)
+            
+        elif notice_type == 'PUBLISHED_DATE' and match:
+            # Extract year from published date
+            published_date = match.group(1)  # Format: YYYY-MM-DD
+            result["published_year"] = int(published_date.split('-')[0])
+            
+        # Add debug info for each pattern
+        if debug:
+            result["debug"][notice_type] = {
+                "pattern": pattern,
+                "match": match.group() if match else None
+            }
+            
+            # Add license text debug info if we're checking COPYRIGHT
+            if notice_type == 'COPYRIGHT' and match:
+                result["debug"]["LICENSE_TEXT"] = {
+                    "pattern": PATTERNS['LICENSE_TEXT'],
+                    "found": result["license_text_present"],
+                    "match": license_match.group() if license_match else None
+                }
+    
+    # Check if both years are present and match
+    if result["copyright_year"] and result["published_year"]:
+        result["years_match"] = result["copyright_year"] == result["published_year"]
+        
+        if debug:
+            result["debug"]["YEARS_MATCH"] = {
+                "copyright_year": result["copyright_year"],
+                "published_year": result["published_year"],
+                "match": result["years_match"]
+            }
+    
+    return result
+
+
 def content_date(content, compare_date=None, debug=False):
-    result = {"date": "Date not found", "debug": {}}
+    result = {
+        "date": "Date not found",
+        "copyright_date": "Copyright date not found",
+        "years_match": False,
+        "error": None,
+        "debug": {}
+    }
     content_date = None
+    copyright_date = None
+    
+    # Check for published date
     for date_type in ['PUBLISHED_DATE', 'HEADER_DATE']:
         pattern = PATTERNS[date_type]
         match = re.search(pattern, content)
@@ -179,6 +250,30 @@ def content_date(content, compare_date=None, debug=False):
                 "match": None
             }
     
+    # Check for copyright date
+    copyright_pattern = PATTERNS['COPYRIGHT']
+    copyright_match = re.search(copyright_pattern, content)
+    if copyright_match:
+        copyright_date = copyright_match.group(1)
+        result["copyright_date"] = copyright_date
+        if debug:
+            result["debug"]["COPYRIGHT"] = {
+                "pattern": copyright_pattern,
+                "match": copyright_match.group()
+            }
+    elif debug:
+        result["debug"]["COPYRIGHT"] = {
+            "pattern": copyright_pattern,
+            "match": None
+        }
+    
+    # Validate that the years match
+    if content_date and copyright_date:
+        published_year = str(content_date.year)
+        result["years_match"] = published_year == copyright_date
+        if not result["years_match"]:
+            result["error"] = f"Copyright year ({copyright_date}) must match published year ({published_year})"
+    
     if compare_date and content_date:
         compare_date = datetime.strptime(compare_date, "%Y-%m-%d").date()
         days_difference = abs((compare_date - content_date).days)
@@ -188,48 +283,8 @@ def content_date(content, compare_date=None, debug=False):
             "status": "ahead" if compare_date > content_date else "behind" if compare_date < content_date else "same"
         }
     
-    return result
+    return result, EXIT_CONTENT_DATE_ERROR if not result["years_match"] else EXIT_SUCCESS
 
-def content_notices(content, debug=False):
-    result = {"notices": False, "copyright_year": None, "license_text_present": False, "debug": {}}
-    
-    # Remove whitespace and newlines for comparison
-    clean_content = ' '.join(content.split())
-    
-    # First check for notices and copyright
-    for notice_type in ['NOTICES', 'COPYRIGHT']:
-        pattern = PATTERNS[notice_type]
-        match = re.search(pattern, content)
-        
-        if notice_type == 'NOTICES':
-            result["notices"] = bool(match)
-        elif notice_type == 'COPYRIGHT' and match:
-            result["copyright_year"] = match.group(1)
-            
-            # Find the license text after the copyright statement
-            copyright_pos = match.end()
-            search_text = content[copyright_pos:copyright_pos + 10000]
-            
-            # Check if the required license text is present
-            license_match = re.search(PATTERNS['LICENSE_TEXT'], search_text, re.IGNORECASE)
-            result["license_text_present"] = bool(license_match)
-            
-        # Add debug info for each pattern
-        if debug:
-            result["debug"][notice_type] = {
-                "pattern": pattern,
-                "match": match.group() if match else None
-            }
-            
-            # Add license text debug info if we're checking COPYRIGHT
-            if notice_type == 'COPYRIGHT' and match:
-                result["debug"]["LICENSE_TEXT"] = {
-                    "pattern": PATTERNS['LICENSE_TEXT'],
-                    "found": result["license_text_present"],
-                    "match": license_match.group() if license_match else None
-                }
-    
-    return result
 
 def content_title(content, debug=False):
     """
@@ -498,7 +553,7 @@ def analyze_file(options, filename=None):
 
     # Handle -get-spec-list-csv option
     if '-get-spec-list-csv' in options:
-        output_file = "spec-list.csv"  # Default output file name
+        output_file = "spec-list.csv"
         if '-output' in options:
             output_index = options.index('-output')
             if output_index + 1 >= len(options) or options[output_index + 1].startswith('-'):
@@ -570,36 +625,27 @@ def analyze_file(options, filename=None):
                     return results, EXIT_CONTENT_STATE_ERROR
 
             if '-content-date' in options:
-                content_date_result = content_date(content, compare_date, debug)
-                results['Content Date'] = content_date_result
-                if content_date_result['date'] == "Date not found":
-                    return results, EXIT_CONTENT_DATE_ERROR
+                date_result, date_exit_code = content_date(content, compare_date, debug)
+                results['Content Date'] = date_result
+                if not date_result['years_match']:
+                    print(f"Error: {date_result['error']}")
+                    return results, date_exit_code
 
             if '-content-ref' in options:
                 content_ref_result = content_ref(content, check_url, debug)
                 results['References'] = content_ref_result
                 if check_url and not content_ref_result.get('all_accessible', True):
                     return results, EXIT_CONTENT_REF_ERROR
-            
-            # Add new content-title check
-            if '-content-title' in options:
-                content_title_result = content_title(content, debug)
-                results['Content Title'] = content_title_result
-                if not content_title_result['match']:
-                    return results, EXIT_CONTENT_TITLE_MISMATCH
-
 
             if '-content-notices' in options:
                 content_notices_result = content_notices(content, debug)
                 results['Notices'] = content_notices_result
-                # Update the error condition to check both notices and license text
                 if not content_notices_result['notices'] or not content_notices_result['license_text_present']:
                     if not content_notices_result['notices']:
                         print("Error: Required notices section is missing.")
                     if not content_notices_result['license_text_present']:
                         print("Error: Required license text is missing.")
                     return results, EXIT_CONTENT_NOTICES_ERROR
-
 
             if '-content-struct' in options:
                 content_struct_result = content_struct(content, debug)
@@ -619,11 +665,11 @@ def analyze_file(options, filename=None):
                 if not history_result['history_present']:
                     return results, EXIT_CONTENT_HISTORY_ERROR
 
-            if '-content-filename-match' in options:
-                content_filename_match_result = content_filename_match(content, os.path.basename(filename), debug)
-                results['Content-Filename Match'] = content_filename_match_result
-                if not content_filename_match_result['match']:
-                    return results, EXIT_CONTENT_FILENAME_MISMATCH
+            if '-content-title' in options:
+                content_title_result = content_title(content, debug)
+                results['Content Title'] = content_title_result
+                if not content_title_result['match']:
+                    return results, EXIT_CONTENT_TITLE_MISMATCH
 
         except FileNotFoundError:
             print(f"Error: File '{filename}' not found.")
@@ -636,7 +682,7 @@ def analyze_file(options, filename=None):
             return results, EXIT_FILE_PROCESSING_ERROR
 
     return results, EXIT_SUCCESS
-
+    
 def content_filename_match(content, filename, debug=False):
     result = {"match": False}
     filename_type = None
@@ -712,7 +758,7 @@ def process_draft_file(filename, debug=False):
         print(f"Debug: Base filename is {base_filename}")
     
     if not re.match(PATTERNS['DRAFT'], base_filename):
-        print(f"Error: '{base_filename}' does not match the required DRAFT pattern.")
+        print(f"Error: '{base_filename}' does not match the required file naming pattern for drafts.")
         return None, EXIT_INVALID_DRAFT_FILENAME
 
     try:
@@ -755,6 +801,7 @@ def process_draft_file(filename, debug=False):
         return f"Error: Permission denied when accessing file '{filename}'.", EXIT_PERMISSION_ERROR
     except Exception as e:
         return f"Error processing file '{filename}': {str(e)}", EXIT_FILE_PROCESSING_ERROR
+
 def check_draft_in_csv(draft_filename, csv_file='spec-list.csv'):
     # Extract just the filename without the directory path
     base_filename = os.path.basename(draft_filename)
@@ -781,7 +828,32 @@ def check_draft_in_csv(draft_filename, csv_file='spec-list.csv'):
         return EXIT_FILE_PROCESSING_ERROR
 
 def main():
-    if len(sys.argv) < 2:
+    # Define valid options
+    VALID_OPTIONS = {
+        '-filename-state',
+        '-content-state',
+        '-content-date',
+        '-date',
+        '-content-ref',
+        '-check-url',
+        '-content-notices',
+        '-content-struct',
+        '-content-authors',
+        '-content-history',
+        '-content-title',
+        '-content-filename-match',
+        '-process-draft',
+        '-check-draft',
+        '-list',
+        '-get-spec-list-csv',
+        '-output',
+        '-get-specs',
+        '-directory',
+        '-debug',
+        '-csv'
+    }
+
+    def show_usage():
         print("Usage: python cli-tool.py [OPTIONS] [FILENAME]")
         print("Options:")
         print("  -filename-state   Analyze filename state")
@@ -794,7 +866,7 @@ def main():
         print("  -content-struct   Check document structure")
         print("  -content-authors  Extract author information")
         print("  -content-history  Check for document history")
-        print("  -content-title    Compare title in documents ")
+        print("  -content-title    Compare title in documents")
         print("  -content-filename-match  Check if content type and number match filename")
         print("  -process-draft FILE  Process a draft file and output file names")
         print("  -check-draft FILE Check if file already exists in spec-list.csv")
@@ -804,13 +876,24 @@ def main():
         print("  -get-specs        Download all specification files")
         print("  -directory DIR    Specify directory for downloaded specs (use with -get-specs)")
         print("  -debug            Show debug information (matched patterns)")
+        print("  -csv FILE         Specify CSV file for -check-draft")
         sys.exit(EXIT_INVALID_USAGE)
+
+    if len(sys.argv) < 2:
+        show_usage()
+
+    # Check for unknown options
+    options = [arg for arg in sys.argv[1:] if arg.startswith('-')]
+    for opt in options:
+        if opt not in VALID_OPTIONS:
+            print(f"Error: Unknown option '{opt}'")
+            show_usage()
 
     options = sys.argv[1:]
     filename = next((arg for arg in reversed(sys.argv) if not arg.startswith('-')), None)
 
     debug = '-debug' in options
-
+    
     if '-process-draft' in options:
         draft_index = options.index('-process-draft')
         if draft_index + 1 >= len(options):
