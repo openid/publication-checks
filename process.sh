@@ -13,7 +13,7 @@ debug_print() {
 
 # Function to run cli-tool.py and check exit status
 run_cli_tool() {
-    output=$(python ../$REPO/cli-tool.py "$@" 2>&1)
+    output=$(python cli-tool.py "$@" 2>&1)
     exit_code=$?
     if [ $exit_code -ne 0 ]; then
         echo -e "There is no $1 in $2"
