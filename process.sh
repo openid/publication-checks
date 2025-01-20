@@ -130,6 +130,7 @@ for file in $changed_files; do
     fi
 
     # Check document state
+    uname -a
     state_output=$(run_cli_tool "-content-state" "../$file")
     echo_info $state_output
     
