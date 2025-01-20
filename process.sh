@@ -2,7 +2,6 @@
 DEBUG=false
 # Enable debug mode if the DEBUG environment variable is set
 DEBUG=${DEBUG:-false}
-REPO="publication-checks"
 
 # Function to print debug messages
 debug_print() {
