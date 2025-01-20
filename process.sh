@@ -36,7 +36,8 @@ echo_info() {
 run_cli_tool() {
     output=$(python cli-tool.py "$@" 2>&1)
     exit_code=$?
-    echo_info "All in'n'out: "$@
+    echo_info "Parameter 1 contains: "$1
+    echo_info "Parameter 2 contains: "$2
     if [ $exit_code -ne 0 ]; then
         echo -e "There is no $1 in $2"
         echo -e "output:"
