@@ -36,8 +36,6 @@ echo_info() {
 run_cli_tool() {
     output=$(python cli-tool.py "$@" 2>&1)
     exit_code=$?
-    echo "Parameter 1 contains: "$1
-    echo "Parameter 2 contains: "$2
     if [ $exit_code -ne 0 ]; then
         echo -e "There is no $1 in $2"
         echo -e "output:"
@@ -132,13 +130,10 @@ for file in $changed_files; do
     fi
 
     # Check document state
-    uname -a
     state_output=$(run_cli_tool "-content-state" "../$file")
-    echo $state_output
     
     # Extract the state from the output
     state=$(echo "$state_output" | grep "state:" | awk '{print $NF}' | tr -d '[:space:]')
-    echo $state
     
     case "$state" in
         UNKNOWN )
