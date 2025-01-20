@@ -11,6 +11,27 @@ debug_print() {
     fi
 }
 
+# Define color codes
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
+readonly CYAN='\033[0;36m'
+readonly NC='\033[0m'
+
+# Define color print functions
+echo_error() {
+    printf "${RED}%s${NC}\n" "$1"
+}
+echo_warn() {
+    printf "${YELLOW}%s${NC}\n" "$1"
+}
+echo_good() {
+    printf "${GREEN}%s${NC}\n" "$1"
+}
+echo_info() {
+    printf "${CYAN}%s${NC}\n" "$1"
+}
+
 # Function to run cli-tool.py and check exit status
 run_cli_tool() {
     output=$(python cli-tool.py "$@" 2>&1)
