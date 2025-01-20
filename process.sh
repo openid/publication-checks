@@ -54,7 +54,7 @@ run_cli_tool() {
 
 # Fetch OpenID Specs list
 if ! run_cli_tool "-get-spec-list-csv" "-output" "spec-list.csv" "Fetching OpenID Specs list"; then
-    echo -e "\e[31m: OpenID Specs not available. Exiting script."
+    echo_error "OpenID Specs not available. Exiting script."
     exit 1
 fi
 
@@ -71,15 +71,15 @@ done
 
 # Check if there are any changed HTML files
 if [ -z "$changed_files" ]; then
-    echo -e "\e[31mFAIL: No HTML files have changed.  Exiting script."
+    echo_error "FAIL: No HTML files have changed.  Exiting script."
     exit 1
 fi
 
 # Check that only one sub-directory is changed
 numofwg=$(echo $subdirectories | tr " " "\n" | sort -u | uniq | wc -w)
 if [ $numofwg != 1 ]; then
-    echo -e "\e[31mFAIL: More than one WG sub-directory updated."
-    DOCFAILS=0
+    echo_error "FAIL: More than one WG sub-directory updated."
+    WGFAILS=1
 fi
 
 # Loop through each changed HTML file
@@ -135,44 +135,59 @@ for file in $changed_files; do
     # Extract the state from the output
     state=$(echo "$state_output" | grep "state:" | awk '{print $NF}' | tr -d '[:space:]')
     
+    versionedname=$(basename "${file%.html}")
+    debug_print $versionedname
+    unversionedname=${versionedname:0:-3}
+    debug_print $unversionedname
+
     case "$state" in
         UNKNOWN )
-            echo -e "\e[31mFAIL: Problem with document titles so state is UNKNOWN"
+            echo_error "FAIL: Problem with document titles so state is UNKNOWN"
             DOCFAILS=1
             ;;
         DRAFT )
             if [ "$has_history" = true ]; then
-                echo -e "\e[32mDocument is in DRAFT state"
-                echo -e "\e[32mPASS: Document has a history section"
+                echo_good "Document is in DRAFT state"
+                echo_good "PASS: Document has a history section"
             else
-                echo -e "\e[32mDocument is in DRAFT state"
-                echo -e "\e[31mFAIL: DRAFT state but does not have required history section"
+                echo_good "Document is in DRAFT state"
+                echo_error "FAIL: DRAFT state but does not have required history section"
                 DOCFAILS=1
             fi
             ;;
         FINAL )
             if [ "$has_history" = false ]; then
-                echo -e "\e[32mDocument is in FINAL state"
-                echo -e "\e[32mPASS: Document does not have a history section"
+                echo_good "Document is in FINAL state"
+                echo_good "PASS: Document does not have a history section"
             else
-                echo -e "\e[32mDocument is in FINAL state"
-                echo -e "\e[31mFAIL: FINAL state but history section exists"
+                echo_good "Document is in FINAL state"
+                echo_error "FAIL: FINAL state but history section exists"
                 DOCFAILS=1
             fi
             ;;
         ERRATA )
+            # check errata does not have a history section
             if [ "$has_history" = false ]; then
-                echo -e "\e[32mDocument is in ERRATA state"
-                echo -e "\e[32mPASS: Document does not have a history section"
+                echo_good "Document is in ERRATA state"
+                echo_good "PASS: Document does not have a history section"
             else
-                echo -e "\e[32mDocument is in ERRATA state"
-                echo -e "\e[31mFAIL: ERRATA state but history section exists"
+                echo_good "Document is in ERRATA state"
+                echo_error "FAIL: ERRATA state but history section exists"
+                DOCFAILS=1
+            fi
+            # check that there is a precursor final on specs directory
+            existingfinal=$(grep -E  "$unversionedname-final.html" spec-list.csv | cut -d "," -f 1)
+            debug_print $existingfinal
+            if ! [ -z $existingfinal ]; then
+                echo_good "PASS: A predecessor final spec exists"
+            else
+                echo_error "FAIL: A predecessor final spec does not exist"
                 DOCFAILS=1
             fi
             ;;
         * )
-            echo -e "\e[31mFAIL: Unexpected document state: $state"
-            echo -e "\e[31mFAIL: this may be due to incorrect file name format or heading suffix issues"
+            echo_error "FAIL: Unexpected document state: $state"
+            echo_error "FAIL: this may be due to incorrect file name format or heading suffix issues"
             DOCFAILS=1
             ;;
     esac
@@ -180,35 +195,35 @@ for file in $changed_files; do
     # Run content checks
     ## Content Authors
     if ! run_cli_tool "-content-authors" "../$file"; then
-        echo -e "\e[31mFAIL: Problem with authors in $file."
+        echo_error "FAIL: Problem with authors in $file."
         DOCFAILS=1
         else
-        echo -e "\e[32mPASS: Authors section in $file is good"
+        echo_good "PASS: Authors section in $file is good"
     fi
 
     ## Content Notices
     if ! run_cli_tool "-content-notices" "../$file"; then
-        echo -e "\e[31mFAIL: Problem with Notices section in $file."
+        echo_error "FAIL: Problem with Notices section in $file."
         DOCFAILS=1
         else
-        echo -e "\e[32mPASS: Notices section in $file is good"
+        echo_good "PASS: Notices section in $file is good"
     fi
 
     ## Content References
-    if ! run_cli_tool "-content-ref -check-url" "../$file"; then
-        echo -e "\e[31mFAIL: Problem with References in $file."
+    if ! run_cli_tool "-content-ref" "-check-url" "../$file"; then
+        echo_error "FAIL: Problem with References in $file."
         DOCFAILS=1
         else
-        echo -e "\e[32mPASS: References in $file is good"
+        echo_good "PASS: References in $file is good"
     fi
 
     ## Content Structure
     if ! run_cli_tool "-content-struct" "../$file"; then
-        echo -e "\e[31mFAIL: Problem with structure in $file."
+        echo_error "FAIL: Problem with structure in $file."
         DOCFAILS=1
         else
-        echo -e "\e[32mPASS: Structure of $file is good"
-        echo -e "\e[32m This indicates that Abstract, Introduction, References, Normative References, Informative References, Acknowledgements and Security Considerations sections are all present"
+        echo_good "PASS: Structure of $file is good"
+        echo_good " This indicates that Abstract, Introduction, References, Normative References, Informative References, Acknowledgements and Security Considerations sections are all present"
     fi
 
     # Output content date
@@ -216,22 +231,21 @@ for file in $changed_files; do
     echo "Today is: $today"
     days_old="unset"
     date_output=$(run_cli_tool "-content-date" "-date" "$today" "../$file")
-#echo $date_output | grep 'difference' | cut -d " " -f 11 | tr -d ,
-    days_old=$(echo $date_output | grep 'difference' | cut -d " " -f 11 | tr -d ,)
+    days_old=$(echo $date_output | grep 'difference' | cut -d " " -f 17 | tr -d ,)
     echo "$days_old days since publication" 
     if [ "$days_old" -gt 10 ]; then
-        echo -e "\e[31mFAIL: Publication date is more than 10 days ago in $file."
+        echo_error "FAIL: Publication date is more than 10 days ago in $file."
         DOCFAILS=1
         else
-        echo -e "\e[32mPASS: Publication date of $file is good"
+        echo_good "PASS: Publication date of $file is good"
     fi
  
     if [ $DOCFAILS == "1" ]
     then 
         ANYFAILS=1
-        echo -e "\e[31mFAIL: $file did not pass all checks"
+        echo_error "FAIL: $file did not pass all checks"
     else
-        echo -e "\e[32mCONGRATULATIONS: $file passed all checks"
+        echo_good "CONGRATULATIONS: $file passed all checks"
     fi
     echo "------------------------------------------------------------------------------------------------------------------"
     echo "------------------------------------------------------------------------------------------------------------------"
@@ -239,13 +253,17 @@ done
 
 echo "All checks completed"
 
+if [ "$DOCFAILS" == "1" ] || [ "$WGFAILS" == "1" ]; then
+    ANYFAILS=1
+fi
+
 if [ $ANYFAILS == "1" ]
 then 
-    echo -e "\e[31mProcess exiting in a fail state - one or more of the submitted html documents failed at least one check" 
+    echo_error "Process exiting in a fail state - one or more of the submitted html documents failed at least one check" 
     exit 1
 fi
 
-echo -e "\e[32mCONGRATULATIONS: all submitted files passed all checks"
+echo_good "CONGRATULATIONS: all submitted files passed all checks"
     echo "------------------------------------------------------------------------------------------------------------------"
 exit 0
 
