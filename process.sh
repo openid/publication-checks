@@ -32,7 +32,7 @@ run_cli_tool() {
 }
 
 # Fetch OpenID Specs list
-if ! run_cli_tool "-get-spec-list-csv" "-output spec-list.csv" "Fetching OpenID Specs list"; then
+if ! run_cli_tool "-get-spec-list-csv" "-output" "spec-list.csv" "Fetching OpenID Specs list"; then
     echo -e "\e[31m: OpenID Specs not available. Exiting script."
     exit 1
 fi
