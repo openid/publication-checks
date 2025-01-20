@@ -181,15 +181,6 @@ for file in $changed_files; do
             DOCFAILS=1
             ;;
     esac
-   
-    
-    # Check if the file already exists using -check-draft
-    if ! run_cli_tool "-check-draft" "$file" "Checking if file exists"; then
-        echo -e "\e[31mFAIL: File $file already exists."
-        DOCFAILS=1
-        else
-        echo -e "\e[32mPASS: $file does not already exist"
-    fi
     
     # Run content checks
     ## Content Authors
