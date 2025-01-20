@@ -34,6 +34,8 @@ echo_info() {
 
 # Function to run cli-tool.py and check exit status
 run_cli_tool() {
+    pwd
+    ls
     output=$(python cli-tool.py "$@" 2>&1)
     exit_code=$?
     if [ $exit_code -ne 0 ]; then
