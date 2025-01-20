@@ -39,20 +39,14 @@ fi
 
 # Get the list of changed HTML files
 changed_files=$(git -C ../. diff --name-only origin/main...HEAD | grep '\.html$')
-echo "Number of new files detected: "$(echo -e "\e[34m$changed_files" | wc -l)""
-echo $changed_files
+echo "Number of new files detected: "$(echo_info "$changed_files" | wc -l)""
+debug_print $changed_files
 echo "List of changed files detected: "
 for file in $changed_files; do
-    echo -e "\e[34m$file"
-    # subdirectories+=$(echo -e "\e[34m$file " | cut -d'/' -f 1 )
+    echo_info "$file"
     subdirectories+=$(dirname "$file")
     subdirectories+=" "
-    #dirname "$file"
-    #subdirectories2+=$(dirname "$file")
 done
-
-echo $subdirectories
-echo $subdirectories2
 
 # Check if there are any changed HTML files
 if [ -z "$changed_files" ]; then
@@ -69,9 +63,43 @@ fi
 
 # Loop through each changed HTML file
 for file in $changed_files; do
+    DOCFAILS=0
     echo "------------------------------------------------------------------------------------------------------------------"
     echo "Processing file: $file"
-    DOCFAILS=0
+
+    # Are there sufficient source files?
+    if [ DEBUG ]; then 
+        ls ../${file%.html}.zip 1>/dev/null 2>/dev/null
+        ZIPEXISTS=$?
+        ls ../${file%.html}.txt 1>/dev/null 2>/dev/null
+        TXTEXISTS=$?
+        ls ../${file%.html}.md 1>/dev/null 2>/dev/null
+        MDEXISTS=$?
+        ls ../${file%.html}.xml 1>/dev/null 2>/dev/null
+        XMLEXISTS=$?
+        debug_print "ZIP Status: $ZIPEXISTS"
+        debug_print "TXT Status: $TXTEXISTS"
+        debug_print "MD Status: $MDEXISTS"
+        debug_print "XML Status: $XMLEXISTS"
+    fi
+
+    # Check if the file already exists using -check-draft
+    if ! run_cli_tool "-check-draft" "$file" "Checking if file exists"; then
+        echo_error "FAIL: File $file already exists."
+        DOCFAILS=1
+        else
+        echo_good "PASS: $file does not already exist"
+    fi
+
+    if [ ! -f "../${file%.html}.zip" ]; then
+        echo_error "FAIL: zipped content called ${file%.html}.zip missing."
+        DOCFAILS=1
+    fi
+
+    if [ ! -f "../${file%.html}.md" ] && [ ! -f "../${file%.html}.xml" ]; then
+        echo_error "FAIL: Either Markdown or XML Source is required. Either a file called ${file%.html}.md or called ${file%.html}.xml is required."
+        DOCFAILS=1
+    fi
 
     # Check for history section
     has_history=false
