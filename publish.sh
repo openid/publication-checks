@@ -199,7 +199,7 @@ for file in $changed_files; do
                 MDFAILS=1
             fi
             # copy spec-x_0-01.xml to non version suffix copy and -final suffix
-            if $(cp ../$(dirname $file)/$versionedname.md ../to-publish/$versionedname.xml 2>/dev/null); then
+            if $(cp ../$(dirname $file)/$versionedname.xml ../to-publish/$versionedname.xml 2>/dev/null); then
                 publishedlinks+="https://openid.net/specs/$versionedname.xml "
                 cp ../$(dirname $file)/$versionedname.xml ../to-publish/$unversionedname.xml
                 publishedlinks+="https://openid.net/specs/$unversionedname.xml "
@@ -207,7 +207,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$unversionedname-final.xml "
                 echo "successful xml copies"
             else
-                echo_warn "WARNING copy of $versionedname.md failed"
+                echo_warn "WARNING copy of $versionedname.xml failed"
                 XMLFAILS=1
             fi
             # copy spec-x_0-01.txt to non version suffix copy and -final suffix - optional
