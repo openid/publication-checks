@@ -9,9 +9,9 @@ echo "-------"
 # Function to print debug messages
 echo "--------"
 debug_print() {
-    if [ "$DEBUG" = true ]; then
-        echo "$@"
-    fi
+    #if [ "$DEBUG" = true ]; then
+    #    echo "$@"
+    #fi
 }
 echo "-------"
 # Define color codes
