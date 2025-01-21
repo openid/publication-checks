@@ -7,6 +7,7 @@ publishedlinks=""
 
 
 # Function to print debug messages
+
 debug_print() {
     if [ "$DEBUG" = true ]; then
         echo "$@"
