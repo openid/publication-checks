@@ -316,6 +316,7 @@ for file in $changed_files; do
 
     if [[ $MDFAILS == "1" ]] && [[ $XMLFAILS == "1" ]];
     then 
+        echo_error "FAIL: $file requires corresponding source as either .md or .xml"
         ANYFAILS=1
     fi
 
