@@ -5,12 +5,14 @@ DEBUG=${DEBUG:-false}
 ANYFAILS=0
 publishedlinks=""
 
+
 # Function to print debug messages
 debug_print() {
     if [ "$DEBUG" = true ]; then
         echo "$@"
     fi
 }
+
 
 # Define color codes
 readonly RED='\033[0;31m'
