@@ -123,7 +123,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$unversionedname.zip "
                 echo "successful zip copies"
             else
-                echo_error "ERROR: Mandatory copy of $versionedname.zip failed"
+                echo_warn "WARNING: copy of $versionedname.zip failed"
                 ZIPFAILS=1
             fi
 
@@ -182,7 +182,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$unversionedname-final.zip "
                 echo "successful zip copies"
             else
-                echo_error "ERROR: Mandatory copy of $versionedname.zip failed"
+                echo_warn "WARNING: copy of $versionedname.zip failed"
                 ZIPFAILS=1
             fi
     # md or xml are required
@@ -258,7 +258,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$unversionedname-errata$next_errata.zip "
                 echo "successful zip copies"
             else
-                echo_error "ERROR: Mandatory copy of $versionedname.zip failed"
+                echo_warn "WARNING: copy of $versionedname.zip failed"
                 ZIPFAILS=1
             fi
             # md or xml are required
@@ -309,7 +309,7 @@ for file in $changed_files; do
 
 # either md or xml are required
 
-    if [ $COPYFAILS == 1 ] || [ $HTMLFAILS == 1 ] || [ $ZIPFAILS == 1 ]
+    if [ $COPYFAILS == 1 ] || [ $HTMLFAILS == 1 ]
     then 
         ANYFAILS=1
     fi
