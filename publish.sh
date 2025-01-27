@@ -82,6 +82,7 @@ for file in $changed_files; do
     XMLFAILS=0
     TXTFAILS=0
     COPYFAILS=0
+    DOCFAILS=0
 
     echo "------------------------------------------------------------------------------------------------------------------"
     echo "Processing file: $file"
@@ -317,15 +318,17 @@ for file in $changed_files; do
     then 
         echo_error "FAIL: $file either a file state error or HTML copy error occured"
         ANYFAILS=1
+        DOCFAILS=1
     fi
 
     if [[ $MDFAILS == "1" ]] && [[ $XMLFAILS == "1" ]];
     then 
         echo_error "FAIL: $file requires corresponding source as either .md or .xml"
         ANYFAILS=1
+        DOCFAILS=1
     fi
 
-    if [ $ANYFAILS == 1 ]; then
+    if [ $DOCFAILS == 1 ]; then
         echo_error "FAIL: $file did not pass all checks"
     else
         echo_good "CONGRATULATIONS: $file prepartion successful"
@@ -338,7 +341,7 @@ echo "All checks completed"
 
 if [ $ANYFAILS == "1" ]
 then 
-    echo_error "Process exiting in a fail state - there was a critical failure" 
+    echo_error "Process exiting in a fail state - there was a critical failure with on or more of the documents" 
     exit 1
 fi
 
