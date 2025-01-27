@@ -308,9 +308,14 @@ for file in $changed_files; do
     esac
 
 # either md or xml are required
-
+    ls -l
+    echo "COPYFAILS= $COPYFAILS"
+    echo "HTMLFAILS= $HTMLFAILS"
+    echo "MDFAILS= $MDFAILS"
+    echo "XMLFAILS= $XMLFAILS"
     if [ $COPYFAILS == 1 ] || [ $HTMLFAILS == 1 ]
     then 
+        echo_error "FAIL: $file either a file state error or HTML copy error occured"
         ANYFAILS=1
     fi
 
