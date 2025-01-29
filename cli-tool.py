@@ -54,32 +54,6 @@ PATTERNS = {
     'REF': r'(?:<dt\s+id="([^"]+)">[^<]*</dt>\s*<dd>.*?<a\s+href="([^"]+)")|(?:<tr><td[^>]*><a\s+name="([^"]+)">\[([^]]+)\]</a></td>\s*<td[^>]*>.*?<a\s+href="([^"]+)")',
     'NOTICES': r'(?:<h3>Appendix C\.&nbsp;\s*Notices</h3>|<a href="#name-notices" class="section-name selfRef">Notices</a>)',
     'COPYRIGHT': r'Copyright \(c\) (\d{4}) The OpenID Foundation',
-    'LICENSE_TEXT': (
-        r'<p id="appendix-[A-Z]-\d+">'
-        r'The OpenID Foundation \(OIDF\) grants to any Contributor, developer, implementer, or other interested party '
-        r'a non-exclusive, royalty free, worldwide copyright license to reproduce, prepare derivative works from, '
-        r'distribute, perform and display, this Implementers Draft or Final Specification solely for the purposes of '
-        r'\(i\) developing specifications, and \(ii\) implementing Implementers Drafts and Final Specifications based on '
-        r'such documents, provided that attribution be made to the OIDF as the source of the material, but that such '
-        r'attribution does not indicate an endorsement by the OIDF\.'
-        r'<a href="#appendix-[A-Z]-\d+" class="pilcrow">¶</a></p>\s*'
-        r'<p id="appendix-[A-Z]-\d+">'
-        r'The technology described in this specification was made available from contributions from various sources, '
-        r'including members of the OpenID Foundation and others\. Although the OpenID Foundation has taken steps to '
-        r'help ensure that the technology is available for distribution, it takes no position regarding the validity '
-        r'or scope of any intellectual property or other rights that might be claimed to pertain to the implementation '
-        r'or use of the technology described in this specification or the extent to which any license under such rights '
-        r'might or might not be available; neither does it represent that it has made any independent effort to identify '
-        r'any such rights\. The OpenID Foundation and the contributors to this specification make no \(and hereby expressly '
-        r'disclaim any\) warranties \(express, implied, or otherwise\), including implied warranties of merchantability, '
-        r'non-infringement, fitness for a particular purpose, or title, related to this specification, and the entire '
-        r'risk as to implementing this specification is assumed by the implementer\. The OpenID Intellectual Property '
-        r'Rights policy requires contributors to offer a patent promise not to assert certain patent claims against '
-        r'other contributors and against implementers\. The OpenID Foundation invites any interested party to bring to '
-        r'its attention any copyrights, patents, patent applications, or other proprietary rights that may cover '
-        r'technology that may be required to practice this specification\.'
-        r'<a href="#appendix-[A-Z]-\d+" class="pilcrow">¶</a></p>'
-    ),
     'AUTHORS_DIV': r'<dd class="authors">(.*?)</dd>',
     'AUTHOR_DIV': r'<div class="author">\s*<div class="author-name">(.*?)</div>\s*<div class="org">(.*?)</div>\s*</div>',
     'AUTHORS_TABLE': r'<table width="99%" border="0" cellpadding="0" cellspacing="0">\s*<tbody>(.*?)</tbody>\s*</table>',
@@ -155,17 +129,60 @@ def content_state(content, debug=False):
     
     return result
 
+def normalize_text(text):
+    """Normalize text by removing extra whitespace, newlines and standardizing quotes"""
+    text = text.replace('"', '"').replace('"', '"').replace(''', "'").replace(''', "'")
+    return ' '.join(text.split())
+
 def content_notices(content, debug=False):
     result = {
         "notices": False, 
         "copyright_year": None,
         "published_year": None,
         "years_match": False,
-        "license_text_present": False, 
+        "license_text_present": False,
         "debug": {}
     }
     
-    # First check for notices and copyright
+    # Key phrases to look for in the license text
+    key_phrases = [
+        "The OpenID Foundation (OIDF) grants to any Contributor, developer, implementer",
+        "non-exclusive, royalty free, worldwide copyright license",
+        "reproduce, prepare derivative works from, distribute, perform and display",
+        "Implementers Draft, Final Specification, or Final Specification Incorporating Errata",
+        "Corrections solely for the purposes of",
+        "(i) developing specifications, and (ii)",
+        "implementing Implementers Drafts, Final Specifications",
+        "based on such documents",
+        "attribution be made to the OIDF as the source of the material",
+        "but that such attribution does not indicate an endorsement by the OIDF",
+        "technology described in this specification was made available from contributions",
+        "from various sources",
+        "members of the OpenID Foundation and others",
+        "OpenID Foundation has taken steps to help ensure that the technology",
+        "available for distribution",
+        "takes no position regarding the validity or scope of any intellectual property",
+        "the extent to which any license under such rights might or might not be available",
+        "made any independent effort to identify any such rights",
+        "The OpenID Foundation and the contributors to this specification make no",
+        "and hereby expressly disclaim any",
+        "warranties (express, implied, or otherwise)",
+        "including implied warranties of",
+        "warranties of merchantability, non-infringement, fitness for a particular purpose",
+        "or title",
+        "related to this specification",
+        "entire risk as to implementing this specification is assumed by the implementer",
+        "The OpenID Intellectual Property Rights policy",
+        "found at openid.net",
+        "requires contributors to offer a patent promise",
+        "not to assert certain patent claims against other contributors",
+        "against other contributors and against implementers",
+        "OpenID invites any interested party to bring to its attention",
+        "copyrights, patents, patent applications, or other proprietary rights",
+        "may cover technology that may be required to practice this specification"
+    ]
+    
+    # Check for notices, copyright, and published date
     for notice_type in ['NOTICES', 'COPYRIGHT', 'PUBLISHED_DATE']:
         pattern = PATTERNS[notice_type]
         match = re.search(pattern, content)
@@ -173,35 +190,34 @@ def content_notices(content, debug=False):
         if notice_type == 'NOTICES':
             result["notices"] = bool(match)
         elif notice_type == 'COPYRIGHT' and match:
-            result["copyright_year"] = int(match.group(1))  # Convert to int for comparison
-            
-            # Find the license text after the copyright statement
-            copyright_pos = match.end()
-            search_text = content[copyright_pos:copyright_pos + 10000]
-            
-            # Check if the required license text is present
-            license_match = re.search(PATTERNS['LICENSE_TEXT'], search_text, re.IGNORECASE)
-            result["license_text_present"] = bool(license_match)
-            
+            result["copyright_year"] = int(match.group(1))
         elif notice_type == 'PUBLISHED_DATE' and match:
-            # Extract year from published date
             published_date = match.group(1)  # Format: YYYY-MM-DD
             result["published_year"] = int(published_date.split('-')[0])
-            
-        # Add debug info for each pattern
+        
         if debug:
             result["debug"][notice_type] = {
                 "pattern": pattern,
                 "match": match.group() if match else None
             }
-            
-            # Add license text debug info if we're checking COPYRIGHT
-            if notice_type == 'COPYRIGHT' and match:
-                result["debug"]["LICENSE_TEXT"] = {
-                    "pattern": PATTERNS['LICENSE_TEXT'],
-                    "found": result["license_text_present"],
-                    "match": license_match.group() if license_match else None
-                }
+    
+    # Check for the license text
+    soup = BeautifulSoup(content, 'html.parser')
+    document_text = normalize_text(' '.join(p.get_text() for p in soup.find_all('p')))
+    
+    missing_phrases = []
+    for phrase in key_phrases:
+        normalized_phrase = normalize_text(phrase)
+        if normalized_phrase not in document_text:
+            missing_phrases.append(phrase)
+    
+    result["license_text_present"] = len(missing_phrases) == 0
+    
+    if debug:
+        result["debug"]["LICENSE_TEXT"] = {
+            "missing_phrases": missing_phrases,
+            "document_text_excerpt": document_text[:500] + "..." if len(document_text) > 500 else document_text
+        }
     
     # Check if both years are present and match
     if result["copyright_year"] and result["published_year"]:
@@ -214,8 +230,7 @@ def content_notices(content, debug=False):
                 "match": result["years_match"]
             }
     
-    return result
-
+    return result 
 
 def content_date(content, compare_date=None, debug=False):
     result = {
@@ -329,20 +344,42 @@ def content_title(content, debug=False):
     return result
 
 def content_struct(content, debug=False):
-    sections = ['ABSTRACT', 'INTRODUCTION', 'REFERENCES', 'NORMATIVE_REFERENCES', 
-                'INFORMATIVE_REFERENCES', 'ACKNOWLEDGEMENTS', 'SECURITY']
-    result = {"structure": {}, "debug": {}}
-    for section in sections:
+    # Define which sections are required vs optional
+    required_sections = ['ABSTRACT', 'INTRODUCTION', 'REFERENCES', 'NORMATIVE_REFERENCES', 
+                        'ACKNOWLEDGEMENTS', 'SECURITY']
+    optional_sections = ['INFORMATIVE_REFERENCES']
+    
+    result = {
+        "structure": {},
+        "warnings": [],
+        "missing_required": [],
+        "missing_optional": [],
+        "debug": {}
+    }
+    
+    # Check all sections (both required and optional)
+    all_sections = required_sections + optional_sections
+    for section in all_sections:
         pattern = PATTERNS[section]
         match = re.search(pattern, content, re.IGNORECASE | re.DOTALL)
         result["structure"][section] = bool(match)
+        
+        # Track missing sections
+        if not match:
+            if section in required_sections:
+                result["missing_required"].append(section)
+            else:
+                result["missing_optional"].append(section)
+                result["warnings"].append(f"Optional section {section} is missing")
+        
         if debug:
             result["debug"][section] = {
                 "pattern": pattern,
-                "match": match.group() if match else None
+                "match": match.group() if match else None,
+                "required": section in required_sections
             }
+    
     return result
-
 
 def check_url_accessibility(url, debug=False):
     if debug:
@@ -644,14 +681,25 @@ def analyze_file(options, filename=None):
                     if not content_notices_result['notices']:
                         print("Error: Required notices section is missing.")
                     if not content_notices_result['license_text_present']:
-                        print("Error: Required license text is missing.")
+                        print("Error: Required license text is missing or incomplete.")
+                        if debug and 'LICENSE_TEXT' in content_notices_result['debug']:
+                            print("Missing phrases:")
+                            for phrase in content_notices_result['debug']['LICENSE_TEXT']['missing_phrases']:
+                                print(f"  - {phrase}")
                     return results, EXIT_CONTENT_NOTICES_ERROR
 
+            
             if '-content-struct' in options:
                 content_struct_result = content_struct(content, debug)
                 results['Document Structure'] = content_struct_result
-                if not all(content_struct_result['structure'].values()):
+                # Only check required sections for errors
+                required_sections = ['ABSTRACT', 'INTRODUCTION', 'REFERENCES', 'NORMATIVE_REFERENCES', 
+                                  'ACKNOWLEDGEMENTS', 'SECURITY']
+                required_sections_present = all(content_struct_result['structure'][section] 
+                                             for section in required_sections)
+                if not required_sections_present:
                     return results, EXIT_CONTENT_STRUCT_ERROR
+
 
             if '-content-authors' in options:
                 content_authors_result = content_authors(content, debug)
@@ -925,7 +973,7 @@ def main():
 
     try:
         results, exit_code = analyze_file(options, filename)
-
+ 
         if results:
             for key, value in results.items():
                 print(f"{key}:")
@@ -940,8 +988,9 @@ def main():
                             for debug_key, debug_value in v.items():
                                 print(f"    {debug_key}:")
                                 if isinstance(debug_value, dict):
-                                    print(f"      Pattern: {debug_value['pattern']}")
-                                    print(f"      Match: {debug_value['match']}")
+                                    # Print each key-value pair in the debug dictionary
+                                    for detail_key, detail_value in debug_value.items():
+                                        print(f"      {detail_key}: {detail_value}")
                                 elif isinstance(debug_value, list):
                                     for i, match in enumerate(debug_value, 1):
                                         print(f"      Match {i}: {match}")
