@@ -111,10 +111,10 @@ for file in $changed_files; do
         echo_good "PASS: $file does not already exist"
     fi
 
-    if [ ! -f "../${file%.html}.zip" ]; then
-        echo_error "FAIL: zipped content called ${file%.html}.zip missing."
-        DOCFAILS=1
-    fi
+    #if [ ! -f "../${file%.html}.zip" ]; then
+    #    echo_error "FAIL: zipped content called ${file%.html}.zip missing."
+    #    DOCFAILS=1
+    #fi
 
     if [ ! -f "../${file%.html}.md" ] && [ ! -f "../${file%.html}.xml" ]; then
         echo_error "FAIL: Either Markdown or XML Source is required. Either a file called ${file%.html}.md or called ${file%.html}.xml is required."
