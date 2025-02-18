@@ -258,6 +258,7 @@ fi
 if [ $ANYFAILS == "1" ]
 then 
     echo_error "Process exiting in a fail state - one or more of the submitted html documents failed at least one check" 
+    echo_error "Guidance on how to fix each FAIL state is provided at https://github.com/openid/publication/blob/main/ERROR-MODES.md"
     exit 1
 fi
 
