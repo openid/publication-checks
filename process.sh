@@ -210,6 +210,7 @@ for file in $changed_files; do
     ## Content References
     if ! run_cli_tool "-content-ref" "-check-url" "../$file"; then
         echo_error "FAIL: Problem with References in $file."
+        echo_error "This might be due to a link not responding to HEAD request - ** known roadmap defect in this tool"
         DOCFAILS=1
         else
         echo_good "PASS: References in $file is good"
