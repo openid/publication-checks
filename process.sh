@@ -231,7 +231,7 @@ for file in $changed_files; do
     days_old="unset"
     date_output=$(run_cli_tool "-content-date" "-date" "$today" "../$file")
     #days_old=$(echo $date_output | grep 'difference' | cut -d " " -f 17 | tr -d ,)
-    days_old=$(echo $date_output | grep 'difference' | cut -d " " -f 17 | tr -d , | grep -o '^-\?[0-9]*$' || echo 0)
+    days_old=$(echo $date_output | grep 'difference' | cut -d " " -f 17 | tr -d , | grep -o '^-\?[0-9]*$' || echo 9999)
     echo "$days_old days since publication"
 
     if [ "$days_old" -gt 10 ]; then
