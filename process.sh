@@ -230,8 +230,10 @@ for file in $changed_files; do
     echo "Today is: $today"
     days_old="unset"
     date_output=$(run_cli_tool "-content-date" "-date" "$today" "../$file")
-    days_old=$(echo $date_output | grep 'difference' | cut -d " " -f 17 | tr -d ,)
-    echo "$days_old days since publication" 
+    #days_old=$(echo $date_output | grep 'difference' | cut -d " " -f 17 | tr -d ,)
+    days_old=$(echo $date_output | grep 'difference' | cut -d " " -f 17 | tr -d , | grep -o '^-\?[0-9]*$' || echo 0)
+    echo "$days_old days since publication"
+
     if [ "$days_old" -gt 10 ]; then
         echo_error "FAIL: Publication date is more than 10 days ago in $file."
         DOCFAILS=1
