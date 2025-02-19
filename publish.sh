@@ -110,7 +110,7 @@ for file in $changed_files; do
             # copy .html to and non version suffix to-publish - mandatory success
             if $(cp ../$file ../to-publish/$(basename "$file") 2>/dev/null); then
                 publishedlinks+="https://openid.net/specs/$(basename "$file") "
-                cp ../$file ../to-publish/$unversionedname.html
+                mv ../$file ../to-publish/$unversionedname.html
                 publishedlinks+="https://openid.net/specs/$unversionedname.html "
                 echo "successful html copies"
             else
@@ -120,7 +120,7 @@ for file in $changed_files; do
             # copy spec-x_0-01.zip to non version suffix copy - mandatory success
             if $(cp ../$(dirname $file)/$versionedname.zip ../to-publish/$versionedname.zip 2>/dev/null); then
                 publishedlinks+="https://openid.net/specs/$versionedname.zip "
-                cp ../$(dirname $file)/$versionedname.zip ../to-publish/$unversionedname.zip
+                mv ../$(dirname $file)/$versionedname.zip ../to-publish/$unversionedname.zip
                 publishedlinks+="https://openid.net/specs/$unversionedname.zip "
                 echo "successful zip copies"
             else
@@ -131,7 +131,7 @@ for file in $changed_files; do
             # copy spec-x_0-01.md to non version suffix copy 
             if $(cp ../$(dirname $file)/$versionedname.md ../to-publish/$versionedname.md 2>/dev/null); then
                 publishedlinks+="https://openid.net/specs/$versionedname.md "
-                cp ../$(dirname $file)/$versionedname.md ../to-publish/$unversionedname.md
+                mv ../$(dirname $file)/$versionedname.md ../to-publish/$unversionedname.md
                 publishedlinks+="https://openid.net/specs/$unversionedname.md "
                 echo "successful md copies"
             else
@@ -141,7 +141,7 @@ for file in $changed_files; do
             # copy spec-x_0-01.xml to non version suffix copy
             if $(cp ../$(dirname $file)/$versionedname.xml ../to-publish/$versionedname.xml 2>/dev/null); then
                 publishedlinks+="https://openid.net/specs/$versionedname.xml "
-                cp ../$(dirname $file)/$versionedname.xml ../to-publish/$unversionedname.xml
+                mv ../$(dirname $file)/$versionedname.xml ../to-publish/$unversionedname.xml
                 publishedlinks+="https://openid.net/specs/$unversionedname.xml "
                 echo "successful xml copies"
             else
@@ -152,7 +152,7 @@ for file in $changed_files; do
             # copy spec-x_0-01.txt to non version suffix copy - optional
             if $(cp ../$(dirname $file)/$versionedname.txt ../to-publish/$versionedname.txt 2>/dev/null); then
                 publishedlinks+="https://openid.net/specs/$versionedname.txt "
-                cp ../$(dirname $file)/$versionedname.txt ../to-publish/$unversionedname.txt
+                mv ../$(dirname $file)/$versionedname.txt ../to-publish/$unversionedname.txt
                 publishedlinks+="https://openid.net/specs/$unversionedname.txt "
                 echo "successful txt copies"
             else
@@ -167,7 +167,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$(basename "$file") "
                 cp ../$file ../to-publish/$unversionedname.html
                 publishedlinks+="https://openid.net/specs/$unversionedname.html "
-                cp ../$file ../to-publish/$unversionedname-final.html
+                mv ../$file ../to-publish/$unversionedname-final.html
                 publishedlinks+="https://openid.net/specs/$unversionedname-final.html "
                 echo "successful html copies"
             else
@@ -179,7 +179,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$versionedname.zip "
                 cp ../$(dirname $file)/$versionedname.zip ../to-publish/$unversionedname.zip
                 publishedlinks+="https://openid.net/specs/$unversionedname.zip "
-                cp ../$(dirname $file)/$versionedname.zip ../to-publish/$unversionedname-final.zip
+                mv ../$(dirname $file)/$versionedname.zip ../to-publish/$unversionedname-final.zip
                 publishedlinks+="https://openid.net/specs/$unversionedname-final.zip "
                 echo "successful zip copies"
             else
@@ -192,7 +192,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$versionedname.md "
                 cp ../$(dirname $file)/$versionedname.md ../to-publish/$unversionedname.md
                 publishedlinks+="https://openid.net/specs/$unversionedname.md "
-                cp ../$(dirname $file)/$versionedname.md ../to-publish/$unversionedname-final.md
+                mv ../$(dirname $file)/$versionedname.md ../to-publish/$unversionedname-final.md
                 publishedlinks+="https://openid.net/specs/$unversionedname-final.md "
                 echo "successful md copies"
             else
@@ -204,7 +204,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$versionedname.xml "
                 cp ../$(dirname $file)/$versionedname.xml ../to-publish/$unversionedname.xml
                 publishedlinks+="https://openid.net/specs/$unversionedname.xml "
-                cp ../$(dirname $file)/$versionedname.xml ../to-publish/$unversionedname-final.xml
+                mv ../$(dirname $file)/$versionedname.xml ../to-publish/$unversionedname-final.xml
                 publishedlinks+="https://openid.net/specs/$unversionedname-final.xml "
                 echo "successful xml copies"
             else
@@ -216,7 +216,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$versionedname.txt "
                 cp ../$(dirname $file)/$versionedname.txt ../to-publish/$unversionedname.txt
                 publishedlinks+="https://openid.net/specs/$unversionedname.txt "
-                cp ../$(dirname $file)/$versionedname.txt ../to-publish/$unversionedname-final.txt
+                mv ../$(dirname $file)/$versionedname.txt ../to-publish/$unversionedname-final.txt
                 publishedlinks+="https://openid.net/specs/$unversionedname-final.txt "
                 echo "successful txt copies"
             else
@@ -243,7 +243,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$(basename "$file") "
                 cp ../$file ../to-publish/$unversionedname.html
                 publishedlinks+="https://openid.net/specs/$unversionedname.html "
-                cp ../$file ../to-publish/$unversionedname-errata$next_errata.html
+                mv ../$file ../to-publish/$unversionedname-errata$next_errata.html
                 publishedlinks+="https://openid.net/specs/$unversionedname-errata$next_errata.html "
                 echo "successful html copies"
             else
@@ -255,7 +255,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$versionedname.zip "
                 cp ../$(dirname $file)/$versionedname.zip ../to-publish/$unversionedname.zip
                 publishedlinks+="https://openid.net/specs/$unversionedname.zip "
-                cp ../$(dirname $file)/$versionedname.zip ../to-publish/$unversionedname-final.zip
+                mv ../$(dirname $file)/$versionedname.zip ../to-publish/$unversionedname-final.zip
                 publishedlinks+="https://openid.net/specs/$unversionedname-errata$next_errata.zip "
                 echo "successful zip copies"
             else
@@ -268,7 +268,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$versionedname.md "
                 cp ../$(dirname $file)/$versionedname.md ../to-publish/$unversionedname.md
                 publishedlinks+="https://openid.net/specs/$unversionedname.md "
-                cp ../$(dirname $file)/$versionedname.md ../to-publish/$unversionedname-final.md
+                mv ../$(dirname $file)/$versionedname.md ../to-publish/$unversionedname-final.md
                 publishedlinks+="https://openid.net/specs/$unversionedname-errata$next_errata.md "
                 echo "successful md copies"
             else
@@ -280,7 +280,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$versionedname.xml "
                 cp ../$(dirname $file)/$versionedname.xml ../to-publish/$unversionedname.xml
                 publishedlinks+="https://openid.net/specs/$unversionedname.xml "
-                cp ../$(dirname $file)/$versionedname.xml ../to-publish/$unversionedname-final.xml
+                mv ../$(dirname $file)/$versionedname.xml ../to-publish/$unversionedname-final.xml
                 publishedlinks+="https://openid.net/specs/$unversionedname-errata$next_errata.xml "
                 echo "successful xml copies"
             else
@@ -292,7 +292,7 @@ for file in $changed_files; do
                 publishedlinks+="https://openid.net/specs/$versionedname.txt "
                 cp ../$(dirname $file)/$versionedname.txt ../to-publish/$unversionedname.txt
                 publishedlinks+="https://openid.net/specs/$unversionedname.txt "
-                cp ../$(dirname $file)/$versionedname.txt ../to-publish/$unversionedname-final.txt
+                mv ../$(dirname $file)/$versionedname.txt ../to-publish/$unversionedname-final.txt
                 publishedlinks+="https://openid.net/specs/$unversionedname-errata$next_errata.txt "
                 echo "successful txt copies"
             else
