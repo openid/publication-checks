@@ -66,7 +66,10 @@ debug_print $changed_files
 echo "List of changed files detected: "
 for file in $changed_files; do
     echo_info "$file"
+    subdirectories+=$(dirname "$file")
+    subdirectories+=" "
 done
+echo "Sub-Directories: $($subdirectories | tr " " "\n" | sort -u | uniq | wc -w)"
 
 # Check if there are any changed HTML files
 if [ -z "$changed_files" ]; then
