@@ -63,13 +63,14 @@ fi
 changed_files=$(git -C ../. diff --name-only origin/main...HEAD | grep '\.html$')
 echo "Number of new files detected: "$(echo_info "$changed_files" | wc -l)""
 debug_print $changed_files
+export CHANGEDFILES=$changed_files
 echo "List of changed files detected: "
 for file in $changed_files; do
     echo_info "$file"
     subdirectories+=$(dirname "$file")
     subdirectories+=" "
 done
-echo "Sub-Directories: $($subdirectories | tr " " "\n" | sort -u | uniq | wc -w)"
+echo "Sub-Directories: $(echo $subdirectories | tr " " "\n" | sort -u | uniq | wc -w)"
 
 # Check if there are any changed HTML files
 if [ -z "$changed_files" ]; then
