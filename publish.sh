@@ -61,6 +61,9 @@ fi
 
 # Get the list of changed HTML files
 changed_files=$(git -C ../. diff --name-only origin/main...HEAD | grep '\.html$')
+echo $changed_files > delete_files.txt
+pwd
+ls -l
 echo "Number of new files detected: "$(echo_info "$changed_files" | wc -l)""
 debug_print $changed_files
 export CHANGEDFILES=$changed_files
