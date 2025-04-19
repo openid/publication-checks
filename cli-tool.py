@@ -50,7 +50,7 @@ PATTERNS = {
     'INFORMATIVE_REFERENCES': r'(?:<(?:h2|h3)[^>]*(?:id="name-informative-references")?[^>]*>.*?Informative References(?:</a>)?\s*</(?:h2|h3)>)',
     'SECURITY': r'(?:<(?:h2|h3)[^>]*(?:id="name-security-considerations")?[^>]*>(?:\d+\.?&nbsp;)?.*?Security [Cc]onsiderations(?:</a>)?\s*</(?:h2|h3)>)',
     'REFERENCES': r'(?:<(?:h2|h3)[^>]*(?:id="name-references")?[^>]*>(?:\d+\.?&nbsp;)?.*?References(?:</a>)?\s*</(?:h2|h3)>)',
-    'ACKNOWLEDGEMENTS': r'(?:<(?:h2|h3)[^>]*(?:id="name-acknowledgements")?[^>]*>(?:\d+\.?&nbsp;)?.*?Acknowledgements(?:</a>)?\s*</(?:h2|h3)>)',
+    'ACKNOWLEDGEMENTS': r'(?:<(?:h2|h3)[^>]*(?:id="name-acknowledge?ments")?[^>]*>(?:\d+\.?&nbsp;)?.*?Acknowledge?ments(?:</a>)?\s*</(?:h2|h3)>)',
     'REF': r'(?:<dt\s+id="([^"]+)">[^<]*</dt>\s*<dd>.*?<a\s+href="([^"]+)")|(?:<tr><td[^>]*><a\s+name="([^"]+)">\[([^]]+)\]</a></td>\s*<td[^>]*>.*?<a\s+href="([^"]+)")',
     'NOTICES': r'(?:<h3>Appendix C\.&nbsp;\s*Notices</h3>|<a href="#name-notices" class="section-name selfRef">Notices</a>)',
     'COPYRIGHT': r'Copyright \(c\) (\d{4}) The OpenID Foundation',
