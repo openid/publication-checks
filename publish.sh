@@ -104,7 +104,11 @@ for file in $changed_files; do
     
     versionedname=$(basename "${file%.html}")
     debug_print $versionedname
-    unversionedname=${versionedname:0:-3}
+    if [[ $versionedname == *-final ]]; then
+      unversionedname=${versionedname:0:-6}
+    else
+      unversionedname=${versionedname:0:-3}
+    fi
     debug_print $unversionedname
     
     case "$state" in
