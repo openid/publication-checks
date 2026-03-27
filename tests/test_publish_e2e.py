@@ -1,12 +1,12 @@
 """
-End-to-end tests for ``publish.sh``.
+End-to-end tests for ``publish.sh`` and ``publish.py``.
 
 Each test builds an HTML fixture, creates a temporary git repository with
 the expected directory layout (including a ``to-publish/`` directory),
-runs ``publish.sh`` via bash, and asserts on the exit code and the files
-created inside ``to-publish/``.
+runs the publish script via the parameterised ``run_publish`` fixture,
+and asserts on the exit code and the files created inside ``to-publish/``.
 
-These tests make **real** network calls because ``publish.sh`` fetches
+These tests make **real** network calls because the publish scripts fetch
 ``spec-list.csv`` from openid.net on every invocation.  They are marked
 with ``pytest.mark.e2e`` so they can be selected or deselected easily.
 """
@@ -26,7 +26,7 @@ if _TESTS_DIR not in sys.path:
     sys.path.insert(0, _TESTS_DIR)
 
 from conftest import _build_spec_html  # noqa: E402
-from e2e_helpers import create_test_repo, run_shell_script  # noqa: E402
+from e2e_helpers import create_test_repo, run_shell_script, run_python_script  # noqa: E402
 
 pytestmark = pytest.mark.e2e
 
@@ -46,7 +46,7 @@ def _network_available() -> bool:
 
 _SKIP_NO_NETWORK = pytest.mark.skipif(
     not _network_available(),
-    reason="openid.net is unreachable – network required for publish.sh e2e tests",
+    reason="openid.net is unreachable – network required for publish e2e tests",
 )
 
 
@@ -62,10 +62,25 @@ _DEFAULT_CSV = (
 
 
 def _setup_publish_dir(repo_path):
-    """Create the ``to-publish/`` directory that ``publish.sh`` copies into."""
+    """Create the ``to-publish/`` directory that the publish scripts copy into."""
     to_publish = repo_path / "to-publish"
     to_publish.mkdir(exist_ok=True)
     return to_publish
+
+
+# ===================================================================
+# Parameterised fixture -- runs each test against shell AND python
+# ===================================================================
+
+
+@pytest.fixture(params=["shell", "python"])
+def run_publish(request):
+    def _run(repo_path, scripts_path):
+        if request.param == "shell":
+            return run_shell_script("publish.sh", repo_path, scripts_path)
+        else:
+            return run_python_script("publish.py", repo_path, scripts_path)
+    return _run
 
 
 # ===================================================================
@@ -74,7 +89,7 @@ def _setup_publish_dir(repo_path):
 
 
 @_SKIP_NO_NETWORK
-def test_draft_publish(tmp_path):
+def test_draft_publish(tmp_path, run_publish):
     """Draft HTML + .md should produce versioned + unversioned .html and .md."""
     today = _today_str()
     html = _build_spec_html(
@@ -92,7 +107,7 @@ def test_draft_publish(tmp_path):
     )
     to_publish = _setup_publish_dir(repo_path)
 
-    result = run_shell_script("publish.sh", repo_path, scripts_path)
+    result = run_publish(repo_path, scripts_path)
 
     assert result.returncode == 0, (
         f"Expected exit 0 but got {result.returncode}.\n"
@@ -100,22 +115,18 @@ def test_draft_publish(tmp_path):
     )
     assert "CONGRATULATIONS" in result.stdout
 
-    # publish.sh for DRAFT: cp to versioned, mv to unversioned
-    # After cp + mv the versioned copy is in to-publish but the original is
-    # moved, so we get: unversioned .html (via mv) and versioned .html (via cp)
+    # publish for DRAFT: versioned copy + unversioned copy
     published = {p.name for p in to_publish.iterdir()}
-    # Versioned html was copied (cp), then original was moved (mv) to unversioned
     assert "openid-connect-test-1_0.html" in published, (
         f"Unversioned HTML missing. Got: {published}"
     )
-    # .md copies: versioned copy (cp), then moved to unversioned (mv)
     assert "openid-connect-test-1_0.md" in published, (
         f"Unversioned MD missing. Got: {published}"
     )
 
 
 @_SKIP_NO_NETWORK
-def test_draft_with_zip(tmp_path):
+def test_draft_with_zip(tmp_path, run_publish):
     """Draft HTML + .md + .zip should also produce .zip copies."""
     today = _today_str()
     html = _build_spec_html(
@@ -134,7 +145,7 @@ def test_draft_with_zip(tmp_path):
     )
     to_publish = _setup_publish_dir(repo_path)
 
-    result = run_shell_script("publish.sh", repo_path, scripts_path)
+    result = run_publish(repo_path, scripts_path)
 
     assert result.returncode == 0, (
         f"Expected exit 0 but got {result.returncode}.\n"
@@ -150,7 +161,7 @@ def test_draft_with_zip(tmp_path):
 
 
 @_SKIP_NO_NETWORK
-def test_final_publish(tmp_path):
+def test_final_publish(tmp_path, run_publish):
     """Final HTML + .md should produce versioned, unversioned, and -final copies."""
     today = _today_str()
     html = _build_spec_html(
@@ -169,7 +180,7 @@ def test_final_publish(tmp_path):
     )
     to_publish = _setup_publish_dir(repo_path)
 
-    result = run_shell_script("publish.sh", repo_path, scripts_path)
+    result = run_publish(repo_path, scripts_path)
 
     assert result.returncode == 0, (
         f"Expected exit 0 but got {result.returncode}.\n"
@@ -178,7 +189,7 @@ def test_final_publish(tmp_path):
     assert "CONGRATULATIONS" in result.stdout
 
     published = {p.name for p in to_publish.iterdir()}
-    # FINAL produces: versioned (cp), unversioned (cp), -final (mv)
+    # FINAL produces: versioned (cp), unversioned (cp), -final (mv/cp)
     assert "openid-connect-test-1_0-final.html" in published, (
         f"-final HTML missing. Got: {published}"
     )
@@ -194,7 +205,7 @@ def test_final_publish(tmp_path):
 
 
 @_SKIP_NO_NETWORK
-def test_unknown_state_fails(tmp_path):
+def test_unknown_state_fails(tmp_path, run_publish):
     """An unrecognisable title should cause the script to exit 1."""
     today = _today_str()
     # Build HTML with a title that doesn't match DRAFT/FINAL/ERRATA/IMPLEMENTORS
@@ -214,7 +225,7 @@ def test_unknown_state_fails(tmp_path):
     )
     _setup_publish_dir(repo_path)
 
-    result = run_shell_script("publish.sh", repo_path, scripts_path)
+    result = run_publish(repo_path, scripts_path)
 
     assert result.returncode == 1, (
         f"Expected exit 1 but got {result.returncode}.\n"
@@ -223,7 +234,7 @@ def test_unknown_state_fails(tmp_path):
 
 
 @_SKIP_NO_NETWORK
-def test_missing_source_fails(tmp_path):
+def test_missing_source_fails(tmp_path, run_publish):
     """HTML only (no .md or .xml) should fail with 'requires corresponding source'."""
     today = _today_str()
     html = _build_spec_html(
@@ -241,7 +252,7 @@ def test_missing_source_fails(tmp_path):
     )
     _setup_publish_dir(repo_path)
 
-    result = run_shell_script("publish.sh", repo_path, scripts_path)
+    result = run_publish(repo_path, scripts_path)
 
     assert result.returncode == 1, (
         f"Expected exit 1 but got {result.returncode}.\n"
