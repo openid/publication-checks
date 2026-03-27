@@ -819,8 +819,6 @@ def content_filename_match(content, filename, debug=False):
     
     return result
 
-import os
-
 def process_draft_file(filename, debug=False):
     if debug:
         print(f"Debug: Processing file {filename}")
