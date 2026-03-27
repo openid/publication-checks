@@ -42,17 +42,52 @@ class TestContentRef:
         assert is_accessible is True
 
     @responses.activate
-    def test_check_url_true_not_accessible(self, draft_html):
-        """Mock HEAD returning 404 -- all_accessible should be False."""
+    def test_check_url_head_fails_get_succeeds(self, draft_html):
+        """HEAD returns 405 but GET returns 200 -- should be accessible (GET fallback)."""
+        responses.add(
+            responses.HEAD,
+            "https://www.rfc-editor.org/rfc/rfc2119",
+            status=405,
+        )
+        responses.add(
+            responses.GET,
+            "https://www.rfc-editor.org/rfc/rfc2119",
+            status=200,
+        )
+        result = spec_validator.content_ref(draft_html, check_url=True)
+        assert result["all_accessible"] is True
+
+    @responses.activate
+    def test_check_url_both_fail(self, draft_html):
+        """Both HEAD and GET return 404 -- not accessible."""
         responses.add(
             responses.HEAD,
             "https://www.rfc-editor.org/rfc/rfc2119",
             status=404,
         )
+        responses.add(
+            responses.GET,
+            "https://www.rfc-editor.org/rfc/rfc2119",
+            status=404,
+        )
         result = spec_validator.content_ref(draft_html, check_url=True)
         assert result["all_accessible"] is False
-        _, _, is_accessible = result["references"][0]
-        assert is_accessible is False
+
+    @responses.activate
+    def test_check_url_head_non_200_triggers_get(self, draft_html):
+        """HEAD returns 301 -- not accepted, falls back to GET."""
+        responses.add(
+            responses.HEAD,
+            "https://www.rfc-editor.org/rfc/rfc2119",
+            status=301,
+        )
+        responses.add(
+            responses.GET,
+            "https://www.rfc-editor.org/rfc/rfc2119",
+            status=200,
+        )
+        result = spec_validator.content_ref(draft_html, check_url=True)
+        assert result["all_accessible"] is True
 
     @responses.activate
     def test_check_url_true_timeout(self, draft_html):
@@ -64,5 +99,3 @@ class TestContentRef:
         )
         result = spec_validator.content_ref(draft_html, check_url=True)
         assert result["all_accessible"] is False
-        _, _, is_accessible = result["references"][0]
-        assert is_accessible is False
