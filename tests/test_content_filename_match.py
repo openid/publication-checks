@@ -9,24 +9,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 cli_tool = importlib.import_module("cli-tool")
 
 
-# ---------------------------------------------------------------------------
-# All tests in this file are marked xfail because content_filename_match()
-# has multiple bugs:
-#   1. Line 754 references PATTERNS['TITLE'] which does not exist -- the
-#      correct key is PATTERNS['TITLE_TAG'].  This raises KeyError.
-#   2. Line 750 calls match.group(2) for DRAFT filenames whose regex has no
-#      second capture group, raising IndexError.
-#
-# The tests document the *expected correct* behaviour so that they will start
-# passing once both bugs are fixed.
-# ---------------------------------------------------------------------------
-
-BUG_REASON = (
-    "Bug: references non-existent PATTERNS['TITLE'], "
-    "should be PATTERNS['TITLE_TAG']"
-)
-
-
 def _build_content(title):
     """Return minimal HTML content with matching <title> and <h1> tags."""
     return (
@@ -35,7 +17,6 @@ def _build_content(title):
     )
 
 
-@pytest.mark.xfail(reason=BUG_REASON, raises=(KeyError, IndexError))
 class TestDraftFilenameMatch:
     """DRAFT filename paired with DRAFT content should match."""
 
@@ -54,7 +35,6 @@ class TestDraftFilenameMatch:
         assert result["match"] is True
 
 
-@pytest.mark.xfail(reason=BUG_REASON, raises=(KeyError, IndexError))
 class TestFinalFilenameMatch:
     """FINAL filename paired with FINAL content should match."""
 
@@ -66,7 +46,6 @@ class TestFinalFilenameMatch:
         assert result["match"] is True
 
 
-@pytest.mark.xfail(reason=BUG_REASON, raises=(KeyError, IndexError))
 class TestMismatchedTypes:
     """Filename type and content type differ -- should NOT match."""
 
@@ -85,7 +64,6 @@ class TestMismatchedTypes:
         assert result["match"] is False
 
 
-@pytest.mark.xfail(reason=BUG_REASON, raises=(KeyError, IndexError))
 class TestVersionNumberMismatch:
     """When types agree but version numbers differ, match should be False."""
 
@@ -97,7 +75,6 @@ class TestVersionNumberMismatch:
         assert result["match"] is False
 
 
-@pytest.mark.xfail(reason=BUG_REASON, raises=(KeyError, IndexError))
 class TestErrataFilenameMatch:
     """ERRATA filename paired with ERRATA content should match."""
 
@@ -120,7 +97,6 @@ class TestErrataFilenameMatch:
         assert result["match"] is False
 
 
-@pytest.mark.xfail(reason=BUG_REASON, raises=(KeyError, IndexError))
 class TestDebugOutput:
     """Debug mode should populate extra information in the result."""
 

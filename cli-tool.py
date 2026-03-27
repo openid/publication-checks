@@ -719,6 +719,12 @@ def analyze_file(options, filename=None):
                 if not content_title_result['match']:
                     return results, EXIT_CONTENT_TITLE_MISMATCH
 
+            if '-content-filename-match' in options:
+                match_result = content_filename_match(content, os.path.basename(filename), debug)
+                results['Filename Match'] = match_result
+                if not match_result['match']:
+                    return results, EXIT_CONTENT_FILENAME_MISMATCH
+
         except FileNotFoundError:
             print(f"Error: File '{filename}' not found.")
             return results, EXIT_FILE_NOT_FOUND
@@ -746,12 +752,17 @@ def content_filename_match(content, filename, debug=False):
                 filename_type = file_type
                 if file_type == 'CURRENT':
                     filename_number = match.group(1).split('-')[-1].replace('_', '.')
+                elif file_type == 'DRAFT':
+                    # DRAFT pattern has no capture groups; extract trailing number before .html
+                    draft_num_match = re.search(r'-(\d{1,2})\.html$', filename)
+                    if draft_num_match:
+                        filename_number = draft_num_match.group(1)
                 elif file_type != 'FINAL':
                     filename_number = match.group(2)
                 break
-    
+
     # Check content
-    title_match = re.search(PATTERNS['TITLE'], content, re.DOTALL | re.IGNORECASE)
+    title_match = re.search(PATTERNS['TITLE_TAG'], content, re.DOTALL | re.IGNORECASE)
     if title_match:
         title_content = title_match.group(1)
         for content_type_check in ['DRAFT', 'ERRATA', 'IMPLEMENTORS']:
@@ -759,7 +770,7 @@ def content_filename_match(content, filename, debug=False):
             match = re.search(pattern, title_content, re.IGNORECASE)
             if match:
                 content_type = content_type_check
-                content_number = match.group(1)
+                content_number = match.group(1) or match.group(2) if match.lastindex and match.lastindex >= 2 else match.group(1)
                 break
         
         if not content_type:

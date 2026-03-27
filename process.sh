@@ -190,6 +190,14 @@ for file in $changed_files; do
             ;;
     esac
     
+    ## Content-Filename Match
+    if ! run_cli_tool "-content-filename-match" "../$file"; then
+        echo_error "FAIL: Content state or version number does not match filename in $file."
+        DOCFAILS=1
+        else
+        echo_good "PASS: Content matches filename in $file"
+    fi
+
     # Run content checks
     ## Content Authors
     if ! run_cli_tool "-content-authors" "../$file"; then
