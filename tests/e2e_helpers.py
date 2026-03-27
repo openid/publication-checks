@@ -34,18 +34,14 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # Files that must be copied into the test scripts directory.
 _SCRIPT_FILES = [
-    "process.sh",
-    "publish.sh",
     "spec_validator.py",
-    "cli-tool.py",
+    "process.py",
+    "publish.py",
     "requirements.txt",
 ]
 
 # Optional files that are copied only if they already exist.
-_OPTIONAL_SCRIPT_FILES = [
-    "process.py",
-    "publish.py",
-]
+_OPTIONAL_SCRIPT_FILES = []
 
 
 def _ensure_python_symlink(directory: Path) -> None:

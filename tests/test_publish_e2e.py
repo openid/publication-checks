@@ -26,7 +26,7 @@ if _TESTS_DIR not in sys.path:
     sys.path.insert(0, _TESTS_DIR)
 
 from conftest import _build_spec_html  # noqa: E402
-from e2e_helpers import create_test_repo, run_shell_script, run_python_script  # noqa: E402
+from e2e_helpers import create_test_repo, run_python_script  # noqa: E402
 
 pytestmark = pytest.mark.e2e
 
@@ -73,13 +73,11 @@ def _setup_publish_dir(repo_path):
 # ===================================================================
 
 
-@pytest.fixture(params=["shell", "python"])
-def run_publish(request):
+@pytest.fixture
+def run_publish():
+    """Run publish.py."""
     def _run(repo_path, scripts_path):
-        if request.param == "shell":
-            return run_shell_script("publish.sh", repo_path, scripts_path)
-        else:
-            return run_python_script("publish.py", repo_path, scripts_path)
+        return run_python_script("publish.py", repo_path, scripts_path)
     return _run
 
 

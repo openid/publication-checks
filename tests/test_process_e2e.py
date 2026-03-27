@@ -25,7 +25,7 @@ if _TESTS_DIR not in sys.path:
     sys.path.insert(0, _TESTS_DIR)
 
 from conftest import _build_spec_html  # noqa: E402
-from e2e_helpers import create_test_repo, run_shell_script, run_python_script  # noqa: E402
+from e2e_helpers import create_test_repo, run_python_script  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Marker applied to every test in this module
@@ -52,14 +52,11 @@ _SKIP_NO_NETWORK = pytest.mark.skipif(
 )
 
 
-@pytest.fixture(params=["shell", "python"])
-def run_process(request):
-    """Run process.sh or process.py depending on the parametrize value."""
+@pytest.fixture
+def run_process():
+    """Run process.py."""
     def _run(repo_path, scripts_path):
-        if request.param == "shell":
-            return run_shell_script("process.sh", repo_path, scripts_path)
-        else:
-            return run_python_script("process.py", repo_path, scripts_path)
+        return run_python_script("process.py", repo_path, scripts_path)
     return _run
 
 
