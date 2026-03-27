@@ -227,6 +227,22 @@ def main() -> int:
                 state_suffix="-final",
             )
 
+        elif state == "DRAFT_ERRATA":
+            print("Do DRAFT_ERRATA copies (versioned only – does not overwrite unversioned final)")
+            _do_draft_errata_copies(
+                file, file_path, dir_of_file, versioned_name,
+                to_publish, published_links,
+            )
+            html_fails = not os.path.exists(
+                os.path.join(to_publish, os.path.basename(file))
+            )
+            md_fails = not os.path.exists(
+                os.path.join(to_publish, f"{versioned_name}.md")
+            )
+            xml_fails = not os.path.exists(
+                os.path.join(to_publish, f"{versioned_name}.xml")
+            )
+
         elif state == "ERRATA":
             print("Do ERRATA copies")
             next_errata = _lookup_next_errata(unversioned_name, csv_path)
@@ -370,6 +386,36 @@ def _do_final_copies(
             _copy_file(src, os.path.join(to_publish, f"{unversioned_name}-final.{ext}"))
             published_links.append(
                 f"https://openid.net/specs/{unversioned_name}-final.{ext}"
+            )
+            print(f"successful {ext} copies")
+        else:
+            echo_warn(f"WARNING: copy of {versioned_name}.{ext} failed")
+
+
+def _do_draft_errata_copies(
+    file: str,
+    file_path: str,
+    dir_of_file: str,
+    versioned_name: str,
+    to_publish: str,
+    published_links: list[str],
+) -> None:
+    """DRAFT_ERRATA: copy versioned only — do not overwrite the unversioned final."""
+    basename = os.path.basename(file)
+
+    # .html -- mandatory
+    if _copy_file(file_path, os.path.join(to_publish, basename)):
+        published_links.append(f"https://openid.net/specs/{basename}")
+        print("successful html copies")
+    else:
+        echo_error(f"ERROR: Mandatory copy of {file} failed")
+
+    # optional companion extensions (versioned only)
+    for ext in ("zip", "md", "xml", "txt"):
+        src = os.path.join("..", dir_of_file, f"{versioned_name}.{ext}")
+        if _copy_file(src, os.path.join(to_publish, f"{versioned_name}.{ext}")):
+            published_links.append(
+                f"https://openid.net/specs/{versioned_name}.{ext}"
             )
             print(f"successful {ext} copies")
         else:

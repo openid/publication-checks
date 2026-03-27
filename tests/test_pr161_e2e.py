@@ -24,6 +24,7 @@ if _TESTS_DIR not in sys.path:
 _REPO_ROOT = os.path.join(_TESTS_DIR, "..")
 sys.path.insert(0, _REPO_ROOT)
 
+from pathlib import Path  # noqa: E402
 from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import create_test_repo, run_python_script  # noqa: E402
 import spec_validator  # noqa: E402
@@ -239,3 +240,84 @@ def test_process_py_on_pr161(tmp_path, pr161_files):
     )
     # The structure check should flag the missing ABSTRACT
     assert "Problem with structure" in result.stdout
+
+
+# ===================================================================
+# Publish test: what files does publish.py create for a draft errata?
+# ===================================================================
+
+
+@pytest.mark.skipif(
+    not os.path.isdir(_PUBLICATION_REPO),
+    reason="publication repo not available",
+)
+def test_publish_draft_errata_ida_spec(tmp_path, pr161_files):
+    """Simulate publishing PR #161's IDA spec with a corrected errata title.
+
+    Since a final already exists, the spec should be titled as a draft errata.
+    publish.py should create only versioned copies (not overwrite the
+    unversioned final URL).
+
+    Files expected in to-publish/:
+    - openid-connect-4-identity-assurance-1_0-17.html  (versioned)
+    - openid-connect-4-identity-assurance-1_0-17.md    (versioned)
+    - openid-connect-4-identity-assurance-1_0-17.xml   (versioned)
+    NOT expected:
+    - openid-connect-4-identity-assurance-1_0.html     (unversioned - belongs to final)
+    """
+    # Take the real HTML and patch the title to be a draft errata
+    ida_html = pr161_files[
+        "ekyc-ida/openid-connect-4-identity-assurance-1_0-17.html"
+    ]
+    if isinstance(ida_html, bytes):
+        ida_html = ida_html.decode("utf-8")
+
+    # Patch the title and h1 to include errata language
+    original_title = "OpenID Connect for Identity Assurance 1.0 - draft 17"
+    errata_title = "OpenID Connect for Identity Assurance 1.0 incorporating errata set 1 - draft 17"
+    patched_html = ida_html.replace(original_title, errata_title)
+
+    # Verify the patch worked
+    state = spec_validator.content_state(patched_html)
+    assert state["state"] == "DRAFT_ERRATA", (
+        f"Expected DRAFT_ERRATA after title patch, got {state['state']}"
+    )
+
+    str_files = {}
+    for k, v in pr161_files.items():
+        content = v.decode("utf-8") if isinstance(v, bytes) else v
+        # Only include the IDA spec (not the verified claims spec)
+        if "identity-assurance" in k:
+            if k.endswith(".html"):
+                str_files[k] = patched_html
+            else:
+                str_files[k] = content
+
+    repo_path, scripts_path = create_test_repo(tmp_path, str_files)
+
+    # Create the to-publish directory
+    to_publish = repo_path / "to-publish"
+    to_publish.mkdir(exist_ok=True)
+
+    result = run_python_script("publish.py", repo_path, scripts_path)
+
+    assert result.returncode == 0, (
+        f"Expected exit 0 but got {result.returncode}.\n"
+        f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+    )
+    assert "DRAFT_ERRATA" in result.stdout
+
+    published = {p.name for p in to_publish.iterdir()}
+    print(f"Files in to-publish/: {sorted(published)}")
+
+    # Versioned copies SHOULD exist
+    assert "openid-connect-4-identity-assurance-1_0-17.html" in published
+    assert "openid-connect-4-identity-assurance-1_0-17.md" in published
+    assert "openid-connect-4-identity-assurance-1_0-17.xml" in published
+
+    # Unversioned copies SHOULD NOT exist (final holds that URL)
+    assert "openid-connect-4-identity-assurance-1_0.html" not in published, (
+        "Draft errata should not overwrite the unversioned final URL"
+    )
+    assert "openid-connect-4-identity-assurance-1_0.md" not in published
+    assert "openid-connect-4-identity-assurance-1_0.xml" not in published
