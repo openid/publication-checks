@@ -25,7 +25,7 @@ if _TESTS_DIR not in sys.path:
     sys.path.insert(0, _TESTS_DIR)
 
 from conftest import _build_spec_html  # noqa: E402
-from e2e_helpers import create_test_repo, run_shell_script  # noqa: E402
+from e2e_helpers import create_test_repo, run_shell_script, run_python_script  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Marker applied to every test in this module
@@ -50,6 +50,17 @@ _SKIP_NO_NETWORK = pytest.mark.skipif(
     not _network_available(),
     reason="openid.net is unreachable – network required for process.sh e2e tests",
 )
+
+
+@pytest.fixture(params=["shell", "python"])
+def run_process(request):
+    """Run process.sh or process.py depending on the parametrize value."""
+    def _run(repo_path, scripts_path):
+        if request.param == "shell":
+            return run_shell_script("process.sh", repo_path, scripts_path)
+        else:
+            return run_python_script("process.py", repo_path, scripts_path)
+    return _run
 
 
 def _today_str() -> str:
@@ -78,7 +89,7 @@ _DEFAULT_CSV = (
 
 
 @_SKIP_NO_NETWORK
-def test_valid_draft_passes(tmp_path):
+def test_valid_draft_passes(tmp_path, run_process):
     """A fully valid draft with .md source, all sections, recent date and
     history section should exit 0 and print CONGRATULATIONS."""
     today = _today_str()
@@ -100,7 +111,7 @@ def test_valid_draft_passes(tmp_path):
         tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
     )
 
-    result = run_shell_script("process.sh", repo_path, scripts_path)
+    result = run_process(repo_path, scripts_path)
 
     assert result.returncode == 0, (
         f"Expected exit 0 but got {result.returncode}.\n"
@@ -110,7 +121,7 @@ def test_valid_draft_passes(tmp_path):
 
 
 @_SKIP_NO_NETWORK
-def test_no_html_files_fails(tmp_path):
+def test_no_html_files_fails(tmp_path, run_process):
     """When no HTML files have changed the script should exit 1."""
     # Commit only a markdown file – no .html
     spec_files = {
@@ -120,14 +131,14 @@ def test_no_html_files_fails(tmp_path):
         tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
     )
 
-    result = run_shell_script("process.sh", repo_path, scripts_path)
+    result = run_process(repo_path, scripts_path)
 
     assert result.returncode == 1
     assert "No HTML files have changed" in result.stdout
 
 
 @_SKIP_NO_NETWORK
-def test_multiple_wg_dirs_fails(tmp_path):
+def test_multiple_wg_dirs_fails(tmp_path, run_process):
     """HTML files in two WG sub-directories should trigger a failure."""
     today = _today_str()
     html1 = _build_spec_html(
@@ -152,14 +163,14 @@ def test_multiple_wg_dirs_fails(tmp_path):
         tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
     )
 
-    result = run_shell_script("process.sh", repo_path, scripts_path)
+    result = run_process(repo_path, scripts_path)
 
     assert result.returncode == 1
     assert "More than one WG sub-directory" in result.stdout
 
 
 @_SKIP_NO_NETWORK
-def test_missing_source_fails(tmp_path):
+def test_missing_source_fails(tmp_path, run_process):
     """HTML without a .md or .xml companion should fail."""
     today = _today_str()
     html = _build_spec_html(
@@ -176,14 +187,14 @@ def test_missing_source_fails(tmp_path):
         tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
     )
 
-    result = run_shell_script("process.sh", repo_path, scripts_path)
+    result = run_process(repo_path, scripts_path)
 
     assert result.returncode == 1
     assert "Markdown or XML Source is required" in result.stdout
 
 
 @_SKIP_NO_NETWORK
-def test_duplicate_filename_fails(tmp_path):
+def test_duplicate_filename_fails(tmp_path, run_process):
     """A filename that already exists in the spec list should fail."""
     today = _today_str()
     # Use a filename known to exist on openid.net/specs/
@@ -202,14 +213,14 @@ def test_duplicate_filename_fails(tmp_path):
         tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
     )
 
-    result = run_shell_script("process.sh", repo_path, scripts_path)
+    result = run_process(repo_path, scripts_path)
 
     assert result.returncode == 1
     assert "already exists" in result.stdout
 
 
 @_SKIP_NO_NETWORK
-def test_draft_missing_history_fails(tmp_path):
+def test_draft_missing_history_fails(tmp_path, run_process):
     """A draft without a Document History section should fail."""
     today = _today_str()
     html = _build_spec_html(
@@ -227,14 +238,14 @@ def test_draft_missing_history_fails(tmp_path):
         tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
     )
 
-    result = run_shell_script("process.sh", repo_path, scripts_path)
+    result = run_process(repo_path, scripts_path)
 
     assert result.returncode == 1
     assert "does not have required history" in result.stdout
 
 
 @_SKIP_NO_NETWORK
-def test_final_with_history_fails(tmp_path):
+def test_final_with_history_fails(tmp_path, run_process):
     """A final spec that still has a history section should fail."""
     today = _today_str()
     html = _build_spec_html(
@@ -252,14 +263,14 @@ def test_final_with_history_fails(tmp_path):
         tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
     )
 
-    result = run_shell_script("process.sh", repo_path, scripts_path)
+    result = run_process(repo_path, scripts_path)
 
     assert result.returncode == 1
     assert "FINAL state but history section exists" in result.stdout
 
 
 @_SKIP_NO_NETWORK
-def test_stale_date_fails(tmp_path):
+def test_stale_date_fails(tmp_path, run_process):
     """A publication date older than 10 days should fail."""
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
@@ -275,14 +286,14 @@ def test_stale_date_fails(tmp_path):
         tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
     )
 
-    result = run_shell_script("process.sh", repo_path, scripts_path)
+    result = run_process(repo_path, scripts_path)
 
     assert result.returncode == 1
     assert "more than 10 days ago" in result.stdout
 
 
 @_SKIP_NO_NETWORK
-def test_bad_notices_fails(tmp_path):
+def test_bad_notices_fails(tmp_path, run_process):
     """Missing / incorrect Notices section should fail."""
     today = _today_str()
     html = _build_spec_html(
@@ -300,14 +311,14 @@ def test_bad_notices_fails(tmp_path):
         tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
     )
 
-    result = run_shell_script("process.sh", repo_path, scripts_path)
+    result = run_process(repo_path, scripts_path)
 
     assert result.returncode == 1
     assert "Problem with Notices" in result.stdout
 
 
 @_SKIP_NO_NETWORK
-def test_missing_structure_fails(tmp_path):
+def test_missing_structure_fails(tmp_path, run_process):
     """Omitting required structural sections should fail."""
     today = _today_str()
     html = _build_spec_html(
@@ -325,7 +336,7 @@ def test_missing_structure_fails(tmp_path):
         tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
     )
 
-    result = run_shell_script("process.sh", repo_path, scripts_path)
+    result = run_process(repo_path, scripts_path)
 
     assert result.returncode == 1
     assert "Problem with structure" in result.stdout
