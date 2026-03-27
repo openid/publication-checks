@@ -7,11 +7,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import spec_validator
 
 
-def _build_content(title):
+def _build_content(title, intended_status=None):
     """Return minimal HTML content with matching <title> and <h1> tags."""
+    status_html = ""
+    if intended_status:
+        status_html = f'<dd class="intended-status">{intended_status}</dd>'
     return (
         f"<html><head><title>{title}</title></head>"
-        f'<body><h1 id="title">{title}</h1></body></html>'
+        f'<body><h1 id="title">{title}</h1>{status_html}</body></html>'
     )
 
 
@@ -37,7 +40,7 @@ class TestFinalFilenameMatch:
     """FINAL filename paired with FINAL content should match."""
 
     def test_final_filename_final_content(self):
-        content = _build_content("Final: OpenID Connect Example 1.0")
+        content = _build_content("OpenID Connect Example 1.0", intended_status="Final")
         result = spec_validator.content_filename_match(
             content, "openid-connect-example-1_0-final.html"
         )
@@ -48,7 +51,7 @@ class TestMismatchedTypes:
     """Filename type and content type differ -- should NOT match."""
 
     def test_draft_filename_final_content(self):
-        content = _build_content("Final: OpenID Connect Example 1.0")
+        content = _build_content("OpenID Connect Example 1.0", intended_status="Final")
         result = spec_validator.content_filename_match(
             content, "openid-connect-example-1_0-01.html"
         )

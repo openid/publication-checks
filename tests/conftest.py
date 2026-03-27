@@ -63,7 +63,7 @@ def _oidf_notices_text(year):
 def _build_spec_html(title, state_suffix, year="2026", date="2026-03-20",
                      include_history=True, include_notices=True,
                      include_authors=True, include_all_sections=True,
-                     author_format="div"):
+                     author_format="div", intended_status=None):
     """Build a minimal but realistic OpenID spec HTML document for testing."""
     history_section = ""
     if include_history:
@@ -136,6 +136,8 @@ def _build_spec_html(title, state_suffix, year="2026", date="2026-03-20",
     </head>
     <body>
     <h1 id="title">{title}</h1>
+    {f'<dt class="label-intended-status">Status:</dt>' if intended_status else ''}
+    {f'<dd class="intended-status">{intended_status}</dd>' if intended_status else ''}
     <dd class="published">
       <time datetime="{date}">{date}</time>
     </dd>
@@ -163,9 +165,10 @@ def draft_html():
 @pytest.fixture
 def final_html():
     return _build_spec_html(
-        title="Final: OpenID Connect Example 1.0",
+        title="OpenID Connect Example 1.0",
         state_suffix="final",
         include_history=False,
+        intended_status="Final",
     )
 
 

@@ -42,7 +42,7 @@ PATTERNS = {
     'H1_TITLE': r'<h1(?:\s+id="title")?>(.*?)</h1>',
     'DRAFT_CONTENT': r'.*?\b(?:\d+\.\d+\s*[-–—]\s*)?[Dd]raft\s+(\d+).*',
     'ERRATA_CONTENT': r'(?i).*?(?:errata\s*set\s*(\d+)|\berrata.*?(\d+)).*',
-    'FINAL_CONTENT': r'(?i)(?:<title>\s*Final:.*?</title>|<title>.*?(?:final|1\.0).*?</title>|<dd\s+class="workgroup">\s*Final\s*</dd>|-final\.html)',
+    'FINAL_CONTENT': r'(?i)(?:<dd\s+class="intended-status">\s*Final\s*</dd>|<td\s+class="header">\s*Final\s*</td>)',
     'IMPLEMENTORS_CONTENT': r'.*?\b\d+\.\d+\s*-\s*implementor.*?(\d+).*',
     'ABSTRACT': r'(?:<h2[^>]*id="abstract"[^>]*>\s*<a[^>]*>Abstract</a>\s*</h2>|<h3>\s*Abstract\s*</h3>)',
     'INTRODUCTION': r'(?:<(?:h2|h3)[^>]*(?:id="name-introduction")?[^>]*>(?:\d+\.?&nbsp;)?.*?Introduction(?:</a>)?\s*</(?:h2|h3)>)',

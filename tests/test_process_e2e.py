@@ -246,11 +246,12 @@ def test_final_with_history_fails(tmp_path, run_process):
     """A final spec that still has a history section should fail."""
     today = _today_str()
     html = _build_spec_html(
-        title="Final: OpenID Connect Test 1.0",
+        title="OpenID Connect Test 1.0",
         state_suffix="final",
         date=today,
         year=today[:4],
         include_history=True,
+        intended_status="Final",
     )
     spec_files = {
         "connect/openid-connect-test-1_0-final.html": html,

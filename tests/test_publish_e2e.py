@@ -163,11 +163,12 @@ def test_final_publish(tmp_path, run_publish):
     """Final HTML + .md should produce versioned, unversioned, and -final copies."""
     today = _today_str()
     html = _build_spec_html(
-        title="Final: OpenID Connect Test 1.0",
+        title="OpenID Connect Test 1.0",
         state_suffix="final",
         date=today,
         year=today[:4],
         include_history=False,
+        intended_status="Final",
     )
     spec_files = {
         "connect/openid-connect-test-1_0-final.html": html,

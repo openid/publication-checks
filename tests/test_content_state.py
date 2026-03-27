@@ -108,29 +108,43 @@ class TestContentFinal:
         result = spec_validator.content_state(final_html)
         assert result["state"] == "FINAL"
 
-    def test_final_prefix_in_title(self):
+    def test_final_via_intended_status(self):
+        """Newer xml2rfc specs use <dd class="intended-status">Final</dd>."""
         html = (
             "<html><head>"
-            "<title>Final: OpenID Example 1.0</title>"
+            "<title>OpenID Example 1.0</title>"
             "</head><body>"
-            "<h1>Final: OpenID Example 1.0</h1>"
+            "<h1>OpenID Example 1.0</h1>"
+            '<dd class="intended-status">Final</dd>'
             "</body></html>"
         )
         result = spec_validator.content_state(html)
         assert result["state"] == "FINAL"
 
-    def test_final_detected_via_full_content(self):
-        """FINAL_CONTENT pattern matches against the full content, not just title text."""
+    def test_final_via_header_table(self):
+        """Older specs use <td class="header">Final</td>."""
         html = (
             "<html><head>"
             "<title>OpenID Connect Core 1.0</title>"
             "</head><body>"
             "<h1>OpenID Connect Core 1.0</h1>"
-            '<dd class="workgroup">Final</dd>'
+            '<td class="header">Final</td>'
             "</body></html>"
         )
         result = spec_validator.content_state(html)
         assert result["state"] == "FINAL"
+
+    def test_1_0_in_title_is_not_final(self):
+        """A title containing '1.0' should NOT be detected as FINAL (old bug)."""
+        html = (
+            "<html><head>"
+            "<title>OpenID Example 1.0</title>"
+            "</head><body>"
+            "<h1>OpenID Example 1.0</h1>"
+            "</body></html>"
+        )
+        result = spec_validator.content_state(html)
+        assert result["state"] != "FINAL"
 
 
 class TestContentImplementors:
