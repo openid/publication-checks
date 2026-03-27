@@ -1,0 +1,305 @@
+import importlib
+import os
+import sys
+
+import pytest
+
+# Import the module with a hyphenated name
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+cli_tool = importlib.import_module("cli-tool")
+
+
+class TestContentDraft:
+    """Test DRAFT detection from HTML content."""
+
+    def test_draft_from_fixture(self, draft_html):
+        result = cli_tool.content_state(draft_html)
+        assert result["state"] == "DRAFT"
+
+    def test_draft_title_with_version_prefix(self):
+        html = (
+            "<html><head>"
+            "<title>OpenID Connect Example 1.0 - Draft 01</title>"
+            "</head><body>"
+            "<h1>OpenID Connect Example 1.0 - Draft 01</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "DRAFT"
+
+    def test_draft_high_number(self):
+        html = (
+            "<html><head>"
+            "<title>OpenID Federation 1.0 - Draft 42</title>"
+            "</head><body>"
+            "<h1>OpenID Federation 1.0 - Draft 42</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "DRAFT"
+
+    def test_draft_uppercase_d(self):
+        html = (
+            "<html><head>"
+            "<title>OpenID Connect 1.0 - Draft 05</title>"
+            "</head><body>"
+            "<h1>OpenID Connect 1.0 - Draft 05</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "DRAFT"
+
+    def test_draft_lowercase_d(self):
+        html = (
+            "<html><head>"
+            "<title>OpenID Connect 1.0 - draft 03</title>"
+            "</head><body>"
+            "<h1>OpenID Connect 1.0 - draft 03</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "DRAFT"
+
+
+class TestContentErrata:
+    """Test ERRATA detection from HTML content."""
+
+    def test_errata_from_fixture(self, errata_html):
+        result = cli_tool.content_state(errata_html)
+        assert result["state"] == "ERRATA"
+
+    def test_errata_set_in_title(self):
+        html = (
+            "<html><head>"
+            "<title>OpenID Example incorporating errata set 1</title>"
+            "</head><body>"
+            "<h1>OpenID Example incorporating errata set 1</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "ERRATA"
+
+    def test_errata_higher_number(self):
+        html = (
+            "<html><head>"
+            "<title>OpenID Connect Core errata set 3</title>"
+            "</head><body>"
+            "<h1>OpenID Connect Core errata set 3</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "ERRATA"
+
+    def test_errata_alternative_format(self):
+        """Errata pattern also matches 'errata' followed by a number."""
+        html = (
+            "<html><head>"
+            "<title>OpenID Connect Core errata 2</title>"
+            "</head><body>"
+            "<h1>OpenID Connect Core errata 2</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "ERRATA"
+
+
+class TestContentFinal:
+    """Test FINAL detection from HTML content."""
+
+    def test_final_from_fixture(self, final_html):
+        result = cli_tool.content_state(final_html)
+        assert result["state"] == "FINAL"
+
+    def test_final_prefix_in_title(self):
+        html = (
+            "<html><head>"
+            "<title>Final: OpenID Example 1.0</title>"
+            "</head><body>"
+            "<h1>Final: OpenID Example 1.0</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "FINAL"
+
+    def test_final_detected_via_full_content(self):
+        """FINAL_CONTENT pattern matches against the full content, not just title text."""
+        html = (
+            "<html><head>"
+            "<title>OpenID Connect Core 1.0</title>"
+            "</head><body>"
+            "<h1>OpenID Connect Core 1.0</h1>"
+            '<dd class="workgroup">Final</dd>'
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "FINAL"
+
+
+class TestContentImplementors:
+    """Test IMPLEMENTORS detection from HTML content.
+
+    Note: The IMPLEMENTORS_CONTENT pattern is r'.*?\\b\\d+\\.\\d+\\s*-\\s*implementor.*?(\\d+).*'.
+    DRAFT_CONTENT is checked before IMPLEMENTORS in the state_order. Titles
+    containing the word "Draft" followed by a number will match DRAFT first.
+    For IMPLEMENTORS to win, the title must match IMPLEMENTORS_CONTENT but
+    NOT DRAFT_CONTENT -- i.e., use "implementors" without the word "Draft".
+    """
+
+    def test_implementors_fixture_resolves_to_draft(self, implementors_html):
+        """The conftest fixture title contains 'Draft 1', so DRAFT wins."""
+        result = cli_tool.content_state(implementors_html)
+        assert result["state"] == "DRAFT"
+
+    def test_implementors_without_draft_keyword(self):
+        """Title with 'implementors' but no 'Draft' matches IMPLEMENTORS."""
+        html = (
+            "<html><head>"
+            "<title>OpenID Example 1.0 - implementors version 1</title>"
+            "</head><body>"
+            "<h1>OpenID Example 1.0 - implementors version 1</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "IMPLEMENTORS"
+
+    def test_implementors_higher_number(self):
+        html = (
+            "<html><head>"
+            "<title>OpenID Federation 1.0 - implementors edition 3</title>"
+            "</head><body>"
+            "<h1>OpenID Federation 1.0 - implementors edition 3</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "IMPLEMENTORS"
+
+    def test_draft_beats_implementors_when_both_present(self):
+        """When 'Implementors Draft N' is in the title, DRAFT matches first."""
+        html = (
+            "<html><head>"
+            "<title>OpenID Example 1.0 - Implementors Draft 1</title>"
+            "</head><body>"
+            "<h1>OpenID Example 1.0 - Implementors Draft 1</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "DRAFT"
+
+
+class TestContentUnknown:
+    """Test that UNKNOWN is returned when content is missing required tags."""
+
+    def test_no_title_or_h1(self):
+        html = "<html><head></head><body><p>Hello</p></body></html>"
+        result = cli_tool.content_state(html)
+        assert result["state"] == "UNKNOWN"
+
+    def test_title_exists_but_no_h1(self):
+        html = (
+            "<html><head>"
+            "<title>OpenID Connect Core 1.0 - Draft 01</title>"
+            "</head><body>"
+            "<p>No heading here</p>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "UNKNOWN"
+
+    def test_h1_exists_but_no_title(self):
+        html = (
+            "<html><head></head><body>"
+            "<h1>OpenID Connect Core 1.0 - Draft 01</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "UNKNOWN"
+
+    def test_empty_content(self):
+        result = cli_tool.content_state("")
+        assert result["state"] == "UNKNOWN"
+
+
+class TestContentReleased:
+    """Test that RELEASED is returned when title+h1 exist but no state pattern matches."""
+
+    def test_released_generic_title(self):
+        html = (
+            "<html><head>"
+            "<title>OpenID Some Specification</title>"
+            "</head><body>"
+            "<h1>OpenID Some Specification</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "RELEASED"
+
+    def test_released_no_state_keywords(self):
+        html = (
+            "<html><head>"
+            "<title>A Document With No State Keywords</title>"
+            "</head><body>"
+            "<h1>A Document With No State Keywords</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "RELEASED"
+
+
+class TestContentErrataBeforeDraft:
+    """Test that ERRATA is checked before DRAFT in state detection order."""
+
+    def test_errata_takes_priority_over_draft(self):
+        """A title containing both 'errata' and 'draft' should resolve to ERRATA."""
+        html = (
+            "<html><head>"
+            "<title>OpenID Connect 1.0 Draft errata set 2</title>"
+            "</head><body>"
+            "<h1>OpenID Connect 1.0 Draft errata set 2</h1>"
+            "</body></html>"
+        )
+        result = cli_tool.content_state(html)
+        assert result["state"] == "ERRATA"
+
+
+class TestContentDebugMode:
+    """Test that debug mode populates extra information."""
+
+    def test_debug_includes_title_tag(self, draft_html):
+        result = cli_tool.content_state(draft_html, debug=True)
+        assert "TITLE_TAG" in result["debug"]
+        assert result["debug"]["TITLE_TAG"]["match"] is not None
+
+    def test_debug_includes_h1_title(self, draft_html):
+        result = cli_tool.content_state(draft_html, debug=True)
+        assert "H1_TITLE" in result["debug"]
+        assert result["debug"]["H1_TITLE"]["match"] is not None
+
+    def test_debug_includes_content_patterns(self, draft_html):
+        result = cli_tool.content_state(draft_html, debug=True)
+        assert "DRAFT_CONTENT" in result["debug"]
+        assert result["debug"]["DRAFT_CONTENT"]["match"] is not None
+
+    def test_debug_off_empty(self, draft_html):
+        result = cli_tool.content_state(draft_html, debug=False)
+        assert result["debug"] == {}
+
+    def test_debug_shows_all_content_patterns(self, final_html):
+        result = cli_tool.content_state(final_html, debug=True)
+        for key in ["ERRATA_CONTENT", "DRAFT_CONTENT", "IMPLEMENTORS_CONTENT", "FINAL_CONTENT"]:
+            assert key in result["debug"]
+
+
+class TestContentReturnStructure:
+    """Test the return value structure."""
+
+    def test_return_has_state_key(self):
+        result = cli_tool.content_state("<html></html>")
+        assert "state" in result
+
+    def test_return_has_debug_key(self):
+        result = cli_tool.content_state("<html></html>")
+        assert "debug" in result
+
+    def test_return_is_dict(self):
+        result = cli_tool.content_state("<html></html>")
+        assert isinstance(result, dict)
