@@ -1,9 +1,8 @@
-"""Tests for content_notices() from cli-tool.py."""
+"""Tests for content_notices() from spec_validator.py."""
 
-import importlib
 import textwrap
 
-cli_tool = importlib.import_module("cli-tool")
+import spec_validator
 
 
 class TestContentNoticesValid:
@@ -11,27 +10,27 @@ class TestContentNoticesValid:
 
     def test_notices_present(self, draft_html):
         """A valid document has notices=True."""
-        result = cli_tool.content_notices(draft_html)
+        result = spec_validator.content_notices(draft_html)
         assert result["notices"] is True
 
     def test_license_text_present(self, draft_html):
         """A valid document has license_text_present=True."""
-        result = cli_tool.content_notices(draft_html)
+        result = spec_validator.content_notices(draft_html)
         assert result["license_text_present"] is True
 
     def test_years_match(self, draft_html):
         """A valid document has years_match=True when copyright and published year are the same."""
-        result = cli_tool.content_notices(draft_html)
+        result = spec_validator.content_notices(draft_html)
         assert result["years_match"] is True
 
     def test_copyright_year_extracted(self, draft_html):
         """Copyright year is extracted as an integer from the notices section."""
-        result = cli_tool.content_notices(draft_html)
+        result = spec_validator.content_notices(draft_html)
         assert result["copyright_year"] == 2026
 
     def test_published_year_extracted(self, draft_html):
         """Published year is extracted as an integer from the published date element."""
-        result = cli_tool.content_notices(draft_html)
+        result = spec_validator.content_notices(draft_html)
         assert result["published_year"] == 2026
 
 
@@ -40,12 +39,12 @@ class TestContentNoticesMissing:
 
     def test_no_notices_section(self, bad_notices_html):
         """A document without a notices section has notices=False."""
-        result = cli_tool.content_notices(bad_notices_html)
+        result = spec_validator.content_notices(bad_notices_html)
         assert result["notices"] is False
 
     def test_no_notices_missing_license_text(self, bad_notices_html):
         """A document without a notices section has license_text_present=False."""
-        result = cli_tool.content_notices(bad_notices_html)
+        result = spec_validator.content_notices(bad_notices_html)
         assert result["license_text_present"] is False
 
     def test_notices_present_but_license_phrases_missing(self):
@@ -65,7 +64,7 @@ class TestContentNoticesMissing:
         </body>
         </html>
         """)
-        result = cli_tool.content_notices(html)
+        result = spec_validator.content_notices(html)
         assert result["notices"] is True
         assert result["license_text_present"] is False
 
@@ -88,14 +87,14 @@ class TestContentNoticesYears:
         </body>
         </html>
         """)
-        result = cli_tool.content_notices(html)
+        result = spec_validator.content_notices(html)
         assert result["copyright_year"] == 2024
         assert result["published_year"] == 2025
         assert result["years_match"] is False
 
     def test_years_match_false_when_copyright_missing(self, malformed_html):
         """years_match is False when copyright year is not present."""
-        result = cli_tool.content_notices(malformed_html)
+        result = spec_validator.content_notices(malformed_html)
         assert result["copyright_year"] is None
         assert result["years_match"] is False
 
@@ -105,7 +104,7 @@ class TestContentNoticesDebug:
 
     def test_debug_populates_info(self, draft_html):
         """When debug=True, the debug dict contains pattern match details."""
-        result = cli_tool.content_notices(draft_html, debug=True)
+        result = spec_validator.content_notices(draft_html, debug=True)
         assert "NOTICES" in result["debug"]
         assert "COPYRIGHT" in result["debug"]
         assert "PUBLISHED_DATE" in result["debug"]

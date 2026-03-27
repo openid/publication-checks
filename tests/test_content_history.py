@@ -1,6 +1,4 @@
-import importlib
-
-cli_tool = importlib.import_module("cli-tool")
+import spec_validator
 
 
 class TestContentHistory:
@@ -8,19 +6,19 @@ class TestContentHistory:
 
     def test_history_present_in_draft(self, draft_html):
         """draft_html includes a Document History section (format 1)."""
-        result = cli_tool.content_history(draft_html)
+        result = spec_validator.content_history(draft_html)
         assert result["history_present"] is True
         assert result["history"] is not None
 
     def test_history_not_present(self, no_history_html):
         """no_history_html has include_history=False."""
-        result = cli_tool.content_history(no_history_html)
+        result = spec_validator.content_history(no_history_html)
         assert result["history_present"] is False
         assert result["history"] is None
 
     def test_history_entries_parsed_correctly(self, draft_html):
         """The draft fixture has version -01 with an 'Initial draft' entry."""
-        result = cli_tool.content_history(draft_html)
+        result = spec_validator.content_history(draft_html)
         entries = result["history"]
         assert isinstance(entries, list)
         assert len(entries) > 0
@@ -43,7 +41,7 @@ class TestContentHistory:
         <h1>Next Section</h1>
         </body></html>
         """
-        result = cli_tool.content_history(html)
+        result = spec_validator.content_history(html)
         assert result["history_present"] is True
         assert result["history"] is not None
         joined = " ".join(result["history"])
@@ -61,7 +59,7 @@ class TestContentHistory:
         <h3>Next Section</h3>
         </body></html>
         """
-        result = cli_tool.content_history(html)
+        result = spec_validator.content_history(html)
         assert result["history_present"] is True
         assert result["history"] is not None
         joined = " ".join(result["history"])
@@ -70,7 +68,7 @@ class TestContentHistory:
 
     def test_debug_mode(self, draft_html):
         """When debug=True, debug dict should contain DOCUMENT_HISTORY info."""
-        result = cli_tool.content_history(draft_html, debug=True)
+        result = spec_validator.content_history(draft_html, debug=True)
         debug = result["debug"]
         assert "DOCUMENT_HISTORY" in debug
         assert "pattern" in debug["DOCUMENT_HISTORY"]

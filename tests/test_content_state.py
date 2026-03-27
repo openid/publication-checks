@@ -1,19 +1,17 @@
-import importlib
 import os
 import sys
 
 import pytest
 
-# Import the module with a hyphenated name
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-cli_tool = importlib.import_module("cli-tool")
+import spec_validator
 
 
 class TestContentDraft:
     """Test DRAFT detection from HTML content."""
 
     def test_draft_from_fixture(self, draft_html):
-        result = cli_tool.content_state(draft_html)
+        result = spec_validator.content_state(draft_html)
         assert result["state"] == "DRAFT"
 
     def test_draft_title_with_version_prefix(self):
@@ -24,7 +22,7 @@ class TestContentDraft:
             "<h1>OpenID Connect Example 1.0 - Draft 01</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "DRAFT"
 
     def test_draft_high_number(self):
@@ -35,7 +33,7 @@ class TestContentDraft:
             "<h1>OpenID Federation 1.0 - Draft 42</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "DRAFT"
 
     def test_draft_uppercase_d(self):
@@ -46,7 +44,7 @@ class TestContentDraft:
             "<h1>OpenID Connect 1.0 - Draft 05</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "DRAFT"
 
     def test_draft_lowercase_d(self):
@@ -57,7 +55,7 @@ class TestContentDraft:
             "<h1>OpenID Connect 1.0 - draft 03</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "DRAFT"
 
 
@@ -65,7 +63,7 @@ class TestContentErrata:
     """Test ERRATA detection from HTML content."""
 
     def test_errata_from_fixture(self, errata_html):
-        result = cli_tool.content_state(errata_html)
+        result = spec_validator.content_state(errata_html)
         assert result["state"] == "ERRATA"
 
     def test_errata_set_in_title(self):
@@ -76,7 +74,7 @@ class TestContentErrata:
             "<h1>OpenID Example incorporating errata set 1</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "ERRATA"
 
     def test_errata_higher_number(self):
@@ -87,7 +85,7 @@ class TestContentErrata:
             "<h1>OpenID Connect Core errata set 3</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "ERRATA"
 
     def test_errata_alternative_format(self):
@@ -99,7 +97,7 @@ class TestContentErrata:
             "<h1>OpenID Connect Core errata 2</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "ERRATA"
 
 
@@ -107,7 +105,7 @@ class TestContentFinal:
     """Test FINAL detection from HTML content."""
 
     def test_final_from_fixture(self, final_html):
-        result = cli_tool.content_state(final_html)
+        result = spec_validator.content_state(final_html)
         assert result["state"] == "FINAL"
 
     def test_final_prefix_in_title(self):
@@ -118,7 +116,7 @@ class TestContentFinal:
             "<h1>Final: OpenID Example 1.0</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "FINAL"
 
     def test_final_detected_via_full_content(self):
@@ -131,7 +129,7 @@ class TestContentFinal:
             '<dd class="workgroup">Final</dd>'
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "FINAL"
 
 
@@ -147,7 +145,7 @@ class TestContentImplementors:
 
     def test_implementors_fixture_resolves_to_draft(self, implementors_html):
         """The conftest fixture title contains 'Draft 1', so DRAFT wins."""
-        result = cli_tool.content_state(implementors_html)
+        result = spec_validator.content_state(implementors_html)
         assert result["state"] == "DRAFT"
 
     def test_implementors_without_draft_keyword(self):
@@ -159,7 +157,7 @@ class TestContentImplementors:
             "<h1>OpenID Example 1.0 - implementors version 1</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "IMPLEMENTORS"
 
     def test_implementors_higher_number(self):
@@ -170,7 +168,7 @@ class TestContentImplementors:
             "<h1>OpenID Federation 1.0 - implementors edition 3</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "IMPLEMENTORS"
 
     def test_draft_beats_implementors_when_both_present(self):
@@ -182,7 +180,7 @@ class TestContentImplementors:
             "<h1>OpenID Example 1.0 - Implementors Draft 1</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "DRAFT"
 
 
@@ -191,7 +189,7 @@ class TestContentUnknown:
 
     def test_no_title_or_h1(self):
         html = "<html><head></head><body><p>Hello</p></body></html>"
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "UNKNOWN"
 
     def test_title_exists_but_no_h1(self):
@@ -202,7 +200,7 @@ class TestContentUnknown:
             "<p>No heading here</p>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "UNKNOWN"
 
     def test_h1_exists_but_no_title(self):
@@ -211,11 +209,11 @@ class TestContentUnknown:
             "<h1>OpenID Connect Core 1.0 - Draft 01</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "UNKNOWN"
 
     def test_empty_content(self):
-        result = cli_tool.content_state("")
+        result = spec_validator.content_state("")
         assert result["state"] == "UNKNOWN"
 
 
@@ -230,7 +228,7 @@ class TestContentReleased:
             "<h1>OpenID Some Specification</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "RELEASED"
 
     def test_released_no_state_keywords(self):
@@ -241,7 +239,7 @@ class TestContentReleased:
             "<h1>A Document With No State Keywords</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "RELEASED"
 
 
@@ -257,7 +255,7 @@ class TestContentErrataBeforeDraft:
             "<h1>OpenID Connect 1.0 Draft errata set 2</h1>"
             "</body></html>"
         )
-        result = cli_tool.content_state(html)
+        result = spec_validator.content_state(html)
         assert result["state"] == "ERRATA"
 
 
@@ -265,26 +263,26 @@ class TestContentDebugMode:
     """Test that debug mode populates extra information."""
 
     def test_debug_includes_title_tag(self, draft_html):
-        result = cli_tool.content_state(draft_html, debug=True)
+        result = spec_validator.content_state(draft_html, debug=True)
         assert "TITLE_TAG" in result["debug"]
         assert result["debug"]["TITLE_TAG"]["match"] is not None
 
     def test_debug_includes_h1_title(self, draft_html):
-        result = cli_tool.content_state(draft_html, debug=True)
+        result = spec_validator.content_state(draft_html, debug=True)
         assert "H1_TITLE" in result["debug"]
         assert result["debug"]["H1_TITLE"]["match"] is not None
 
     def test_debug_includes_content_patterns(self, draft_html):
-        result = cli_tool.content_state(draft_html, debug=True)
+        result = spec_validator.content_state(draft_html, debug=True)
         assert "DRAFT_CONTENT" in result["debug"]
         assert result["debug"]["DRAFT_CONTENT"]["match"] is not None
 
     def test_debug_off_empty(self, draft_html):
-        result = cli_tool.content_state(draft_html, debug=False)
+        result = spec_validator.content_state(draft_html, debug=False)
         assert result["debug"] == {}
 
     def test_debug_shows_all_content_patterns(self, final_html):
-        result = cli_tool.content_state(final_html, debug=True)
+        result = spec_validator.content_state(final_html, debug=True)
         for key in ["ERRATA_CONTENT", "DRAFT_CONTENT", "IMPLEMENTORS_CONTENT", "FINAL_CONTENT"]:
             assert key in result["debug"]
 
@@ -293,13 +291,13 @@ class TestContentReturnStructure:
     """Test the return value structure."""
 
     def test_return_has_state_key(self):
-        result = cli_tool.content_state("<html></html>")
+        result = spec_validator.content_state("<html></html>")
         assert "state" in result
 
     def test_return_has_debug_key(self):
-        result = cli_tool.content_state("<html></html>")
+        result = spec_validator.content_state("<html></html>")
         assert "debug" in result
 
     def test_return_is_dict(self):
-        result = cli_tool.content_state("<html></html>")
+        result = spec_validator.content_state("<html></html>")
         assert isinstance(result, dict)

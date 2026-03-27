@@ -1,6 +1,4 @@
-import importlib
-
-cli_tool = importlib.import_module("cli-tool")
+import spec_validator
 
 
 class TestContentTitle:
@@ -8,7 +6,7 @@ class TestContentTitle:
 
     def test_matching_title_and_h1(self, draft_html):
         """draft_html has the same string in <title> and <h1>."""
-        result = cli_tool.content_title(draft_html)
+        result = spec_validator.content_title(draft_html)
         assert result["match"] is True
         assert result["title_tag"] is not None
         assert result["h1_title"] is not None
@@ -21,7 +19,7 @@ class TestContentTitle:
         <html><head><title>Title One</title></head>
         <body><h1 id="title">Title Two</h1></body></html>
         """
-        result = cli_tool.content_title(html)
+        result = spec_validator.content_title(html)
         assert result["match"] is False
         assert result["title_tag"] == "Title One"
         assert result["h1_title"] == "Title Two"
@@ -33,7 +31,7 @@ class TestContentTitle:
         <html><head><title>OpenID Connect Example</title></head>
         <body><h1 id="title">openid connect example</h1></body></html>
         """
-        result = cli_tool.content_title(html)
+        result = spec_validator.content_title(html)
         assert result["match"] is True
 
     def test_missing_title_tag(self):
@@ -43,7 +41,7 @@ class TestContentTitle:
         <html><head></head>
         <body><h1 id="title">Some Title</h1></body></html>
         """
-        result = cli_tool.content_title(html)
+        result = spec_validator.content_title(html)
         assert result["match"] is False
         assert result["title_tag"] is None
 
@@ -54,13 +52,13 @@ class TestContentTitle:
         <html><head><title>Some Title</title></head>
         <body><p>No heading here.</p></body></html>
         """
-        result = cli_tool.content_title(html)
+        result = spec_validator.content_title(html)
         assert result["match"] is False
         assert result["h1_title"] is None
 
     def test_debug_mode(self, draft_html):
         """When debug=True, debug dict should contain pattern match info."""
-        result = cli_tool.content_title(draft_html, debug=True)
+        result = spec_validator.content_title(draft_html, debug=True)
         assert result["debug"] is not None
         assert "TITLE_TAG" in result["debug"]
         assert "H1_TITLE" in result["debug"]

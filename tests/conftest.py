@@ -3,7 +3,7 @@ import sys
 import pytest
 import textwrap
 
-# Add the repo root to the path so we can import cli-tool as a module
+# Add the repo root to the path so we can import spec_validator as a module
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")

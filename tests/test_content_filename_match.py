@@ -1,12 +1,10 @@
-import importlib
 import os
 import sys
 
 import pytest
 
-# Import the module with a hyphenated name
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-cli_tool = importlib.import_module("cli-tool")
+import spec_validator
 
 
 def _build_content(title):
@@ -22,14 +20,14 @@ class TestDraftFilenameMatch:
 
     def test_draft_filename_draft_content(self):
         content = _build_content("OpenID Connect Example 1.0 - Draft 01")
-        result = cli_tool.content_filename_match(
+        result = spec_validator.content_filename_match(
             content, "openid-connect-example-1_0-01.html"
         )
         assert result["match"] is True
 
     def test_draft_higher_number(self):
         content = _build_content("OpenID Connect Example 1.0 - Draft 05")
-        result = cli_tool.content_filename_match(
+        result = spec_validator.content_filename_match(
             content, "openid-connect-example-1_0-05.html"
         )
         assert result["match"] is True
@@ -40,7 +38,7 @@ class TestFinalFilenameMatch:
 
     def test_final_filename_final_content(self):
         content = _build_content("Final: OpenID Connect Example 1.0")
-        result = cli_tool.content_filename_match(
+        result = spec_validator.content_filename_match(
             content, "openid-connect-example-1_0-final.html"
         )
         assert result["match"] is True
@@ -51,14 +49,14 @@ class TestMismatchedTypes:
 
     def test_draft_filename_final_content(self):
         content = _build_content("Final: OpenID Connect Example 1.0")
-        result = cli_tool.content_filename_match(
+        result = spec_validator.content_filename_match(
             content, "openid-connect-example-1_0-01.html"
         )
         assert result["match"] is False
 
     def test_final_filename_draft_content(self):
         content = _build_content("OpenID Connect Example 1.0 - Draft 01")
-        result = cli_tool.content_filename_match(
+        result = spec_validator.content_filename_match(
             content, "openid-connect-example-1_0-final.html"
         )
         assert result["match"] is False
@@ -69,7 +67,7 @@ class TestVersionNumberMismatch:
 
     def test_draft_number_mismatch(self):
         content = _build_content("OpenID Connect Example 1.0 - Draft 03")
-        result = cli_tool.content_filename_match(
+        result = spec_validator.content_filename_match(
             content, "openid-connect-example-1_0-01.html"
         )
         assert result["match"] is False
@@ -82,7 +80,7 @@ class TestErrataFilenameMatch:
         content = _build_content(
             "OpenID Connect Example 1.0 incorporating errata set 1"
         )
-        result = cli_tool.content_filename_match(
+        result = spec_validator.content_filename_match(
             content, "openid-connect-example-1_0-errata1.html"
         )
         assert result["match"] is True
@@ -91,7 +89,7 @@ class TestErrataFilenameMatch:
         content = _build_content(
             "OpenID Connect Example 1.0 incorporating errata set 2"
         )
-        result = cli_tool.content_filename_match(
+        result = spec_validator.content_filename_match(
             content, "openid-connect-example-1_0-errata1.html"
         )
         assert result["match"] is False
@@ -102,7 +100,7 @@ class TestDebugOutput:
 
     def test_debug_contains_types(self):
         content = _build_content("OpenID Connect Example 1.0 - Draft 01")
-        result = cli_tool.content_filename_match(
+        result = spec_validator.content_filename_match(
             content, "openid-connect-example-1_0-01.html", debug=True
         )
         assert "debug" in result
@@ -111,7 +109,7 @@ class TestDebugOutput:
 
     def test_debug_off_has_no_debug_key(self):
         content = _build_content("OpenID Connect Example 1.0 - Draft 01")
-        result = cli_tool.content_filename_match(
+        result = spec_validator.content_filename_match(
             content, "openid-connect-example-1_0-01.html", debug=False
         )
         assert "debug" not in result
