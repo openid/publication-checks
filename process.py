@@ -248,6 +248,14 @@ def main() -> int:
             )
             doc_fails = True
 
+        # -- Title consistency (<title> vs <h1>) ----------------------------
+        title_result = spec_validator.content_title(content, debug)
+        if not title_result["match"]:
+            echo_error(f"FAIL: Title tag does not match H1 heading in {file}.")
+            doc_fails = True
+        else:
+            echo_good(f"PASS: Title tag matches H1 heading in {file}")
+
         # -- Content-filename match ----------------------------------------
         match_result = spec_validator.content_filename_match(content, base_html, debug)
         if not match_result["match"]:
