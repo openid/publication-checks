@@ -101,7 +101,7 @@ def content_state(content, debug=False):
         }
     
     if title_tag_match and h1_title_match:
-        title_content = title_tag_match.group(1)  
+        title_content = title_tag_match.group(1)
         state_order = ['ERRATA', 'DRAFT', 'IMPLEMENTORS', 'FINAL']
         for state in state_order:
             pattern = PATTERNS[f'{state}_CONTENT']
@@ -114,6 +114,12 @@ def content_state(content, debug=False):
                         "match": match.group()
                     }
                 break
+
+        # Detect DRAFT_ERRATA: title contains both errata and draft keywords
+        if result["state"] == "ERRATA":
+            draft_match = re.search(PATTERNS['DRAFT_CONTENT'], title_content, re.IGNORECASE | re.DOTALL)
+            if draft_match:
+                result["state"] = "DRAFT_ERRATA"
         
         if result["state"] == "UNKNOWN":
             result["state"] = "RELEASED"

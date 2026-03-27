@@ -54,6 +54,20 @@ def echo_info(msg: str) -> None:
     print(f"{CYAN}{msg}{NC}")
 
 
+def final_exists_in_csv(unversioned_name, csv_path):
+    """Check whether a -final.html spec exists in the CSV for the given base name."""
+    final_pattern = re.compile(re.escape(unversioned_name) + r"-final\.html")
+    try:
+        with open(csv_path, "r", newline="") as csvf:
+            reader = csv.reader(csvf)
+            for row in reader:
+                if row and final_pattern.search(row[0]):
+                    return True
+    except FileNotFoundError:
+        pass
+    return False
+
+
 # ---------------------------------------------------------------------------
 # Main orchestration
 # ---------------------------------------------------------------------------
@@ -188,6 +202,14 @@ def main() -> int:
             else:
                 echo_error("FAIL: DRAFT state but does not have required history section")
                 doc_fails = True
+
+            # Check that no final already exists for this spec
+            if final_exists_in_csv(unversioned_name, csv_path):
+                echo_error(
+                    "FAIL: A final spec already exists. Post-final drafts "
+                    "must include 'incorporating errata set N' in the title"
+                )
+                doc_fails = True
         elif state == "FINAL":
             echo_good("Document is in FINAL state")
             if not has_history:
@@ -195,28 +217,26 @@ def main() -> int:
             else:
                 echo_error("FAIL: FINAL state but history section exists")
                 doc_fails = True
-        elif state == "ERRATA":
-            echo_good("Document is in ERRATA state")
-            if not has_history:
-                echo_good("PASS: Document does not have a history section")
+        elif state in ("ERRATA", "DRAFT_ERRATA"):
+            echo_good(f"Document is in {state} state")
+
+            if state == "DRAFT_ERRATA":
+                # Draft errata (pre-vote) requires history, like DRAFT
+                if has_history:
+                    echo_good("PASS: Document has a history section")
+                else:
+                    echo_error("FAIL: DRAFT_ERRATA state but does not have required history section")
+                    doc_fails = True
             else:
-                echo_error("FAIL: ERRATA state but history section exists")
-                doc_fails = True
+                # Approved errata (post-vote) must not have history
+                if not has_history:
+                    echo_good("PASS: Document does not have a history section")
+                else:
+                    echo_error("FAIL: ERRATA state but history section exists")
+                    doc_fails = True
 
-            # Check predecessor final spec in CSV
-            existing_final = ""
-            final_pattern = re.compile(re.escape(unversioned_name) + r"-final\.html")
-            try:
-                with open(csv_path, "r", newline="") as csvf:
-                    reader = csv.reader(csvf)
-                    for row in reader:
-                        if row and final_pattern.search(row[0]):
-                            existing_final = row[0]
-                            break
-            except FileNotFoundError:
-                pass
-
-            if existing_final:
+            # Both ERRATA and DRAFT_ERRATA require a predecessor final spec
+            if final_exists_in_csv(unversioned_name, csv_path):
                 echo_good("PASS: A predecessor final spec exists")
             else:
                 echo_error("FAIL: A predecessor final spec does not exist")
