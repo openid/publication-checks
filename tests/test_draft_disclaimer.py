@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(_TESTS_DIR, ".."))
 from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import (  # noqa: E402
     create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+    assert_no_unexpected_fails,
 )
 
 pytestmark = pytest.mark.e2e
@@ -73,6 +74,7 @@ def test_final_without_draft_disclaimer_passes(tmp_path):
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 0
+    assert_no_unexpected_fails(result)
     assert "No draft disclaimer" in result.stdout
 
 
@@ -98,3 +100,4 @@ def test_draft_with_disclaimer_is_fine(tmp_path):
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 0
+    assert_no_unexpected_fails(result)

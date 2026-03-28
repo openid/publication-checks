@@ -206,6 +206,16 @@ def run_shell_script(
     )
 
 
+def assert_no_unexpected_fails(result):
+    """Assert that a script's output contains no FAIL: lines."""
+    import re
+    clean = re.sub(r'\x1b\[[0-9;]*m', '', result.stdout)
+    fail_lines = [line.strip() for line in clean.splitlines() if line.strip().startswith("FAIL:")]
+    assert not fail_lines, (
+        f"Unexpected failures:\n" + "\n".join(f"  {f}" for f in fail_lines)
+    )
+
+
 def run_python_script(
     script_name: str,
     repo_path: Path,
