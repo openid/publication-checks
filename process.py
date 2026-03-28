@@ -248,6 +248,17 @@ def main() -> int:
             )
             doc_fails = True
 
+        # -- Draft disclaimer must not appear in FINAL or ERRATA -------------
+        if state in ("FINAL", "ERRATA"):
+            if "This document is not an OIDF International Standard" in content:
+                echo_error(
+                    f"FAIL: {file} contains 'This document is not an OIDF International Standard' "
+                    "which must be removed for Final and Errata publications"
+                )
+                doc_fails = True
+            else:
+                echo_good(f"PASS: No draft disclaimer in {file}")
+
         # -- Title consistency (<title> vs <h1>) ----------------------------
         title_result = spec_validator.content_title(content, debug)
         if not title_result["match"]:
