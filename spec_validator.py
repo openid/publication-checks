@@ -34,16 +34,16 @@ EXIT_DRAFT_FOUND_IN_CSV = 140
 
 PATTERNS = {
     'CURRENT': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)\.html$',     
-    'DRAFT': r'^[\w-]+-\d+_\d+-\d{1,2}\.html$',
-    'IMPLEMENTORS': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)-ID(\d)\.html$',
+    'DRAFT': r'^[\w-]+-\d+_\d+-\d{2}\.html$',
+    'IMPLEMENTERS': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)-ID(\d)\.html$',
     'ERRATA': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)-errata(\d+)\.html$',
     'FINAL': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)-final\.html$',
     'TITLE_TAG': r'<title>(.*?)</title>',
     'H1_TITLE': r'<h1(?:\s+id="title")?>(.*?)</h1>',
     'DRAFT_CONTENT': r'.*?\b(?:\d+\.\d+\s*[-–—]\s*)?[Dd]raft\s+(\d+).*',
     'ERRATA_CONTENT': r'(?i).*?(?:errata\s*set\s*(\d+)|\berrata.*?(\d+)).*',
-    'FINAL_CONTENT': r'(?i)(?:<title>\s*Final:.*?</title>|<title>.*?(?:final|1\.0).*?</title>|<dd\s+class="workgroup">\s*Final\s*</dd>|-final\.html)',
-    'IMPLEMENTORS_CONTENT': r'.*?\b\d+\.\d+\s*-\s*implementor.*?(\d+).*',
+    'FINAL_CONTENT': r'(?i)(?:<dd\s+class="(?:intended-)?status">\s*Final\s*</dd>|<td\s+class="header">\s*Final\s*</td>)',
+    'IMPLEMENTERS_CONTENT': r'.*?\b\d+\.\d+\s*[-–—]\s*[Ii]mplementers?\s+[Dd]raft\s+(\d+).*',
     'ABSTRACT': r'(?:<h2[^>]*id="abstract"[^>]*>\s*<a[^>]*>Abstract</a>\s*</h2>|<h3>\s*Abstract\s*</h3>)',
     'INTRODUCTION': r'(?:<(?:h2|h3)[^>]*(?:id="name-introduction")?[^>]*>(?:\d+\.?&nbsp;)?.*?Introduction(?:</a>)?\s*</(?:h2|h3)>)',
     'NORMATIVE_REFERENCES': r'(?:<(?:h2|h3)[^>]*(?:id="name-normative-references")?[^>]*>.*?Normative [Rr]eferences(?:</a>)?\s*</(?:h2|h3)>)',
@@ -67,7 +67,7 @@ PATTERNS = {
 def filename_state(filename, debug=False):
     result = {"state": "UNKNOWN", "debug": {}}
     for state, pattern in PATTERNS.items():
-        if state in ['CURRENT', 'DRAFT', 'IMPLEMENTORS', 'ERRATA', 'FINAL']:
+        if state in ['CURRENT', 'DRAFT', 'IMPLEMENTERS', 'ERRATA', 'FINAL']:
             match = re.match(pattern, filename)
             if match:
                 result["state"] = state
@@ -101,8 +101,8 @@ def content_state(content, debug=False):
         }
     
     if title_tag_match and h1_title_match:
-        title_content = title_tag_match.group(1)  
-        state_order = ['ERRATA', 'DRAFT', 'IMPLEMENTORS', 'FINAL']
+        title_content = title_tag_match.group(1)
+        state_order = ['ERRATA', 'IMPLEMENTERS', 'DRAFT', 'FINAL']
         for state in state_order:
             pattern = PATTERNS[f'{state}_CONTENT']
             match = re.search(pattern, title_content if state != 'FINAL' else content, re.IGNORECASE | re.DOTALL)
@@ -114,6 +114,12 @@ def content_state(content, debug=False):
                         "match": match.group()
                     }
                 break
+
+        # Detect DRAFT_ERRATA: title contains both errata and draft keywords
+        if result["state"] == "ERRATA":
+            draft_match = re.search(PATTERNS['DRAFT_CONTENT'], title_content, re.IGNORECASE | re.DOTALL)
+            if draft_match:
+                result["state"] = "DRAFT_ERRATA"
         
         if result["state"] == "UNKNOWN":
             result["state"] = "RELEASED"
@@ -385,14 +391,23 @@ def check_url_accessibility(url, debug=False):
     if debug:
         print(f"  Checking URL: {url}")
     try:
-        response = requests.head(url, allow_redirects=True, timeout=10)
+        response = requests.head(url, allow_redirects=True, timeout=30)
+        if response.status_code == 200:
+            if debug:
+                print(f"    Status: Accessible (HEAD {response.status_code})")
+            return True
+        # HEAD failed — retry with GET (some servers reject HEAD)
+        print(f"    URL {url}: HEAD returned {response.status_code}, retrying with GET")
+        response = requests.get(url, allow_redirects=True, timeout=30, stream=True)
+        response.close()
         is_accessible = response.status_code == 200
-        if debug:
-            print(f"    Status: {'Accessible' if is_accessible else 'Not Accessible'} (Status Code: {response.status_code})")
+        if is_accessible:
+            print(f"    URL {url}: GET returned {response.status_code} (OK)")
+        else:
+            print(f"    URL {url}: GET returned {response.status_code} (FAIL)")
         return is_accessible
     except requests.RequestException as e:
-        if debug:
-            print(f"    Error: {str(e)}")
+        print(f"    URL {url}: Error: {str(e)}")
         return False
 
 def content_ref(content, check_url=False, debug=False):
@@ -544,8 +559,7 @@ def get_spec_list_csv():
 def get_specs(directory):
     url = "https://openid.net/specs/"
     
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    os.makedirs(directory, exist_ok=True)
     
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -719,6 +733,12 @@ def analyze_file(options, filename=None):
                 if not content_title_result['match']:
                     return results, EXIT_CONTENT_TITLE_MISMATCH
 
+            if '-content-filename-match' in options:
+                match_result = content_filename_match(content, os.path.basename(filename), debug)
+                results['Filename Match'] = match_result
+                if not match_result['match']:
+                    return results, EXIT_CONTENT_FILENAME_MISMATCH
+
         except FileNotFoundError:
             print(f"Error: File '{filename}' not found.")
             return results, EXIT_FILE_NOT_FOUND
@@ -740,26 +760,31 @@ def content_filename_match(content, filename, debug=False):
     
     # Check filename
     for file_type, pattern in PATTERNS.items():
-        if file_type in ['CURRENT', 'DRAFT', 'IMPLEMENTORS', 'ERRATA', 'FINAL']:
+        if file_type in ['CURRENT', 'DRAFT', 'IMPLEMENTERS', 'ERRATA', 'FINAL']:
             match = re.match(pattern, filename)
             if match:
                 filename_type = file_type
                 if file_type == 'CURRENT':
                     filename_number = match.group(1).split('-')[-1].replace('_', '.')
+                elif file_type == 'DRAFT':
+                    # DRAFT pattern has no capture groups; extract trailing number before .html
+                    draft_num_match = re.search(r'-(\d{1,2})\.html$', filename)
+                    if draft_num_match:
+                        filename_number = draft_num_match.group(1)
                 elif file_type != 'FINAL':
                     filename_number = match.group(2)
                 break
-    
+
     # Check content
-    title_match = re.search(PATTERNS['TITLE'], content, re.DOTALL | re.IGNORECASE)
+    title_match = re.search(PATTERNS['TITLE_TAG'], content, re.DOTALL | re.IGNORECASE)
     if title_match:
         title_content = title_match.group(1)
-        for content_type_check in ['DRAFT', 'ERRATA', 'IMPLEMENTORS']:
+        for content_type_check in ['ERRATA', 'IMPLEMENTERS', 'DRAFT']:
             pattern = PATTERNS[f'{content_type_check}_CONTENT']
             match = re.search(pattern, title_content, re.IGNORECASE)
             if match:
                 content_type = content_type_check
-                content_number = match.group(1)
+                content_number = match.group(1) or match.group(2) if match.lastindex and match.lastindex >= 2 else match.group(1)
                 break
         
         if not content_type:
@@ -792,8 +817,6 @@ def content_filename_match(content, filename, debug=False):
         }
     
     return result
-
-import os
 
 def process_draft_file(filename, debug=False):
     if debug:
@@ -854,8 +877,9 @@ def check_draft_in_csv(draft_filename, csv_file='spec-list.csv'):
     # Extract just the filename without the directory path
     base_filename = os.path.basename(draft_filename)
     
-    if not re.match(PATTERNS['DRAFT'], base_filename) and not re.match(PATTERNS['FINAL'], base_filename):
-        print(f"Error: '{base_filename}' does not match the required DRAFT or FINAL pattern.")
+    valid_patterns = ['DRAFT', 'FINAL', 'IMPLEMENTERS', 'ERRATA']
+    if not any(re.match(PATTERNS[p], base_filename) for p in valid_patterns):
+        print(f"Error: '{base_filename}' does not match any recognised filename pattern.")
         return EXIT_INVALID_DRAFT_FILENAME
 
     try:
