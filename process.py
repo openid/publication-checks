@@ -484,7 +484,8 @@ def main() -> int:
             struct_result["structure"].get(s) for s in required_sections
         )
         if not struct_ok:
-            echo_error(f"FAIL: Problem with structure in {file}.")
+            missing = [s for s in required_sections if not struct_result["structure"].get(s)]
+            echo_error(f"FAIL: Problem with structure in {file}. Missing sections: {', '.join(missing)}")
             doc_fails = True
         else:
             echo_good(f"PASS: Structure of {file} is good")
