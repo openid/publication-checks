@@ -215,6 +215,25 @@ def main() -> int:
                 echo_error("FAIL: DRAFT state but does not have required history section")
                 doc_fails = True
 
+            # Check sequential draft numbering
+            draft_num_match = re.search(r'-(\d{1,2})\.html$', base_html)
+            if draft_num_match:
+                draft_num = int(draft_num_match.group(1))
+                if draft_num > 0:
+                    prev_draft = f"{unversioned_name}-{draft_num - 1:02d}.html"
+                    try:
+                        with open(csv_path, "r", newline="") as csvf:
+                            csv_content = csvf.read()
+                        if draft_num == 1 or prev_draft in csv_content:
+                            echo_good(f"PASS: Draft numbering is sequential")
+                        else:
+                            echo_warn(
+                                f"WARNING: Previous draft {prev_draft} not found in published specs. "
+                                f"Draft numbers should be sequential."
+                            )
+                    except FileNotFoundError:
+                        pass
+
             # Check that no final already exists for this spec
             if final_exists_in_csv(unversioned_name, csv_path):
                 echo_error(
