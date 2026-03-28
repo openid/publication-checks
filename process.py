@@ -452,10 +452,6 @@ def main() -> int:
         ref_result = spec_validator.content_ref(content, check_url=True, debug=debug)
         if ref_result.get("all_accessible") is False:
             echo_error(f"FAIL: Problem with References in {file}.")
-            echo_error(
-                "This might be due to a link not responding to HEAD request "
-                "- ** known roadmap defect in this tool"
-            )
             doc_fails = True
         else:
             echo_good(f"PASS: References in {file} is good")
