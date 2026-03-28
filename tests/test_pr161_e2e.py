@@ -219,10 +219,13 @@ class TestVerifiedClaimsSpec:
 def test_process_py_on_pr161(tmp_path, pr161_files):
     """Run process.py against the PR #161 files and check what fails.
 
-    We expect failures because:
-    1. ABSTRACT is not detected (xml2rfc format gap)
-    2. Verified Claims spec has non-standard Acknowledgements heading
-    3. No .zip files included (issue #166 mentions this)
+    Expected failures (per spec):
+    - Both: .md references external files but no .zip
+    - Both: previous version included .zip but this submission does not
+    - Both: final spec already exists (should use errata title)
+    - Both: references check fails (openid.net/wg/ekyc-ida/references/ returns 404)
+    - Both: missing ABSTRACT (xml2rfc format gap)
+    - Verified Claims only: also missing ACKNOWLEDGEMENTS (non-standard heading)
     """
     # Decode bytes to str for create_test_repo
     str_files = {
@@ -233,17 +236,47 @@ def test_process_py_on_pr161(tmp_path, pr161_files):
 
     result = run_python_script("process.py", repo_path, scripts_path)
 
-    # We expect process.py to fail because of missing structure
     assert result.returncode == 1, (
-        f"Expected exit 1 (structure failures) but got {result.returncode}.\n"
+        f"Expected exit 1 but got {result.returncode}.\n"
         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
-    # The structure check should flag the missing ABSTRACT
-    assert "Problem with structure" in result.stdout
 
-    # The IDA spec's .md has <{{examples/...}} includes but no .zip
-    assert "references external files" in result.stdout
-    assert ".zip" in result.stdout
+    # Strip ANSI codes for clean matching
+    import re
+    clean = re.sub(r'\x1b\[[0-9;]*m', '', result.stdout)
+
+    # Extract all FAIL lines
+    fail_lines = [line.strip() for line in clean.splitlines() if line.strip().startswith("FAIL:")]
+
+    # Expected failures
+    expected_fails = [
+        "references external files",               # both specs: .md has includes, no .zip
+        "Previous version",                         # both specs: prev version had .zip
+        "final spec already exists",                # both specs: final published
+        "Problem with References",                  # both specs: 404 on wg references URL
+        "Missing sections: ABSTRACT",               # IDA spec: xml2rfc format gap
+        "Missing sections: ABSTRACT, ACKNOWLEDGEMENTS",  # Verified Claims: also missing ack
+        "did not pass all checks",                  # both specs: summary line
+    ]
+
+    # Check every FAIL line matches at least one expected pattern
+    unexpected = []
+    for fail in fail_lines:
+        if not any(exp in fail for exp in expected_fails):
+            unexpected.append(fail)
+
+    assert not unexpected, (
+        f"Unexpected failures found:\n"
+        + "\n".join(f"  {f}" for f in unexpected)
+        + f"\n\nAll FAIL lines:\n"
+        + "\n".join(f"  {f}" for f in fail_lines)
+    )
+
+    # Verify the expected failures are present
+    assert any("references external files" in f for f in fail_lines)
+    assert any("Previous version" in f for f in fail_lines)
+    assert any("final spec already exists" in f for f in fail_lines)
+    assert any("Missing sections: ABSTRACT" in f for f in fail_lines)
 
 
 # ===================================================================
