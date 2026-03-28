@@ -104,15 +104,20 @@ def main() -> int:
         with open(csv_path, "w", newline="") as f:
             f.write(csv_data)
 
-    # ---- Get changed HTML files via git diff ---------------------------
-    try:
-        result = subprocess.run(
-            ["git", "-C", "../.", "diff", "--name-only", "origin/main...HEAD"],
-            capture_output=True, text=True, check=True,
-        )
-        all_changed = result.stdout.strip().splitlines()
-    except subprocess.CalledProcessError:
-        all_changed = []
+    # ---- Get changed HTML files ------------------------------------------
+    # Prefer CHANGED_FILES env var (newline-separated) if set, otherwise git diff
+    changed_files_env = os.environ.get("CHANGED_FILES", "").strip()
+    if changed_files_env:
+        all_changed = changed_files_env.splitlines()
+    else:
+        try:
+            result = subprocess.run(
+                ["git", "-C", "../.", "diff", "--name-only", "origin/main...HEAD"],
+                capture_output=True, text=True, check=True,
+            )
+            all_changed = result.stdout.strip().splitlines()
+        except subprocess.CalledProcessError:
+            all_changed = []
 
     changed_files = [f for f in all_changed if f.endswith(".html")]
 
