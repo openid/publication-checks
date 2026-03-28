@@ -24,7 +24,6 @@ if _TESTS_DIR not in sys.path:
 _REPO_ROOT = os.path.join(_TESTS_DIR, "..")
 sys.path.insert(0, _REPO_ROOT)
 
-from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import create_test_repo, run_python_script  # noqa: E402
 import spec_validator  # noqa: E402
 
@@ -32,21 +31,21 @@ pytestmark = pytest.mark.e2e
 
 FIXTURES_DIR = os.path.join(_TESTS_DIR, "fixtures")
 
-_PR161_FILES = {
-    "ekyc-ida/openid-connect-4-identity-assurance-1_0-17.html": None,
-    "ekyc-ida/openid-connect-4-identity-assurance-1_0-17.md": None,
-    "ekyc-ida/openid-connect-4-identity-assurance-1_0-17.xml": None,
-    "ekyc-ida/openid-ida-verified-claims-1_0-03.html": None,
-    "ekyc-ida/openid-ida-verified-claims-1_0-03.md": None,
-    "ekyc-ida/openid-ida-verified-claims-1_0-03.xml": None,
-}
+_PR161_PATHS = [
+    "ekyc-ida/openid-connect-4-identity-assurance-1_0-17.html",
+    "ekyc-ida/openid-connect-4-identity-assurance-1_0-17.md",
+    "ekyc-ida/openid-connect-4-identity-assurance-1_0-17.xml",
+    "ekyc-ida/openid-ida-verified-claims-1_0-03.html",
+    "ekyc-ida/openid-ida-verified-claims-1_0-03.md",
+    "ekyc-ida/openid-ida-verified-claims-1_0-03.xml",
+]
 
 
 @pytest.fixture(scope="module")
 def pr161_files():
     """Load original PR #161 files from fixtures."""
     files = {}
-    for path in _PR161_FILES:
+    for path in _PR161_PATHS:
         fixture_path = os.path.join(FIXTURES_DIR, os.path.basename(path))
         with open(fixture_path, "r", encoding="utf-8") as f:
             files[path] = f.read()

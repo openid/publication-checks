@@ -150,6 +150,7 @@ def main() -> int:
     # excluding infrastructure directories. This way, adding a new WG just
     # requires creating the directory in the publication repo.
     repo_root = os.path.abspath(os.path.join(_SCRIPT_DIR, ".."))
+    _INFRA_DIRS = {"sync", "to-publish"}
     # List directories on origin/main (not the working tree, which could
     # contain directories added by the PR branch to bypass the check).
     try:
@@ -160,7 +161,7 @@ def main() -> int:
         known_dirs = {
             d for d in result.stdout.strip().splitlines()
             if not d.startswith(".")
-            and d not in ("sync", "to-publish")
+            and d not in _INFRA_DIRS
         }
     except subprocess.CalledProcessError:
         # Fallback to working tree if git command fails (e.g., in tests)
@@ -168,7 +169,7 @@ def main() -> int:
             d for d in os.listdir(repo_root)
             if os.path.isdir(os.path.join(repo_root, d))
             and not d.startswith(".")
-            and d not in ("sync", "to-publish")
+            and d not in _INFRA_DIRS
         }
     for wg_dir in unique_dirs:
         if wg_dir not in known_dirs:
