@@ -173,7 +173,7 @@ def main() -> int:
                     # Markdown uses <{{path/file.ext}}> for file includes.
                     # Note: {{RFC6749}} is a citation reference, NOT a file include.
                     has_includes = bool(
-                        re.search(r'<\{\{[^}]+\}\}>', md_content)  # <{{examples/file.json}}>
+                        re.search(r'<\{\{[^}]+\}\}', md_content)  # <{{examples/file.json}}
                         or re.search(r'!include\b', md_content, re.IGNORECASE)
                         or re.search(r'\{%\s*include', md_content)  # {% include %}
                         or re.search(r'^#include\b', md_content, re.MULTILINE)
