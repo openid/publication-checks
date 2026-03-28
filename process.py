@@ -72,8 +72,10 @@ def _check_history_references_draft(draft_num_match, history_result):
     """Return True (pass) if the history section references the current draft number."""
     if draft_num_match and history_result.get("history"):
         draft_num = draft_num_match.group(1)
+        draft_int = int(draft_num)
         history_text = " ".join(str(e) for e in history_result["history"])
-        if f"-{draft_num}" in history_text:
+        # Match both padded (-01) and unpadded (-1) forms
+        if f"-{draft_int:02d}" in history_text or f"-{draft_int}" in history_text:
             echo_good(f"PASS: History section references draft {draft_num}")
             return True
         else:
@@ -261,7 +263,7 @@ def main() -> int:
 
         # Derive versioned / unversioned names (same logic as shell)
         versioned_name = os.path.splitext(os.path.basename(file))[0]
-        unversioned_name = versioned_name[:-3]
+        unversioned_name = re.sub(r'-\d{1,2}$', '', versioned_name)
 
         # -- State / history consistency -----------------------------------
         if state == "UNKNOWN":

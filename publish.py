@@ -192,7 +192,7 @@ def main() -> int:
         if versioned_name.endswith("-final"):
             unversioned_name = versioned_name[:-6]
         else:
-            unversioned_name = versioned_name[:-3]
+            unversioned_name = re.sub(r'-\d{1,2}$', '', versioned_name)
 
         if debug:
             print(unversioned_name)

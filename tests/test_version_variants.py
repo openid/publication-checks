@@ -173,3 +173,30 @@ def test_process_version_2_0(tmp_path):
         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
     assert "CONGRATULATIONS" in result.stdout
+
+
+@SKIP_NO_NETWORK
+@pytest.mark.e2e
+def test_process_single_digit_draft_number(tmp_path):
+    """process.py should handle single-digit draft numbers like -1 (not just -01)."""
+    today = today_str()
+    html = _build_spec_html(
+        title="OpenID Example 1.0 - Draft 1",
+        date=today,
+        year=today[:4],
+    )
+    # History fixture has "-01" which contains "-1", so draft 1 passes history check.
+    # The key thing being tested is that the unversioned name derivation
+    # works for single-digit filenames (regex strip, not [:-3] slicing).
+    spec_files = {
+        "connect/openid-example-1_0-1.html": html,
+        "connect/openid-example-1_0-1.md": "# Spec\n",
+    }
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    result = run_python_script("process.py", repo_path, scripts_path)
+
+    assert result.returncode == 0, (
+        f"Expected exit 0 but got {result.returncode}.\n"
+        f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+    )
+    assert "CONGRATULATIONS" in result.stdout
