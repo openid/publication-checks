@@ -68,6 +68,22 @@ def final_exists_in_csv(unversioned_name, csv_path):
     return False
 
 
+def _check_history_references_draft(draft_num_match, history_result):
+    """Return True (pass) if the history section references the current draft number."""
+    if draft_num_match and history_result.get("history"):
+        draft_num = draft_num_match.group(1)
+        history_text = " ".join(str(e) for e in history_result["history"])
+        if f"-{draft_num}" in history_text:
+            echo_good(f"PASS: History section references draft {draft_num}")
+            return True
+        else:
+            echo_error(
+                f"FAIL: History section does not reference current draft number {draft_num}"
+            )
+            return False
+    return True
+
+
 # ---------------------------------------------------------------------------
 # Main orchestration
 # ---------------------------------------------------------------------------
@@ -131,6 +147,7 @@ def main() -> int:
         file_path = os.path.join("..", file)
         base_html = os.path.basename(file)
         stem = os.path.splitext(file)[0]  # e.g. connect/openid-connect-test-1_0-01
+        draft_num_match = re.search(r'-(\d{1,2})\.html$', base_html)
 
         # -- Source-file checks -------------------------------------------
         zip_path = os.path.join("..", f"{stem}.zip")
@@ -171,9 +188,8 @@ def main() -> int:
             doc_fails = True
 
         # -- Check companion files match previous version -------------------
-        draft_num_match_pre = re.search(r'-(\d{1,2})\.html$', base_html)
-        if draft_num_match_pre:
-            draft_num_pre = int(draft_num_match_pre.group(1))
+        if draft_num_match:
+            draft_num_pre = int(draft_num_match.group(1))
             if draft_num_pre > 1:
                 # Derive previous draft stem from current basename: replace trailing digits
                 base_stem = os.path.splitext(base_html)[0]
@@ -255,24 +271,13 @@ def main() -> int:
             echo_good("Document is in DRAFT state")
             if has_history:
                 echo_good("PASS: Document has a history section")
-                # Check history references the current draft number
-                draft_num_match = re.search(r'-(\d{1,2})\.html$', base_html)
-                if draft_num_match and history_result.get("history"):
-                    draft_num = draft_num_match.group(1)
-                    history_text = " ".join(str(e) for e in history_result["history"])
-                    if f"-{draft_num}" in history_text:
-                        echo_good(f"PASS: History section references draft {draft_num}")
-                    else:
-                        echo_error(
-                            f"FAIL: History section does not reference current draft number {draft_num}"
-                        )
-                        doc_fails = True
+                if not _check_history_references_draft(draft_num_match, history_result):
+                    doc_fails = True
             else:
                 echo_error("FAIL: DRAFT state but does not have required history section")
                 doc_fails = True
 
             # Check sequential draft numbering
-            draft_num_match = re.search(r'-(\d{1,2})\.html$', base_html)
             if draft_num_match:
                 draft_num = int(draft_num_match.group(1))
                 if draft_num > 0:
@@ -311,18 +316,8 @@ def main() -> int:
                 # Draft errata (pre-vote) requires history, like DRAFT
                 if has_history:
                     echo_good("PASS: Document has a history section")
-                    # Check history references the current draft number
-                    draft_num_match = re.search(r'-(\d{1,2})\.html$', base_html)
-                    if draft_num_match and history_result.get("history"):
-                        draft_num = draft_num_match.group(1)
-                        history_text = " ".join(str(e) for e in history_result["history"])
-                        if f"-{draft_num}" in history_text:
-                            echo_good(f"PASS: History section references draft {draft_num}")
-                        else:
-                            echo_error(
-                                f"FAIL: History section does not reference current draft number {draft_num}"
-                            )
-                            doc_fails = True
+                    if not _check_history_references_draft(draft_num_match, history_result):
+                        doc_fails = True
                 else:
                     echo_error("FAIL: DRAFT_ERRATA state but does not have required history section")
                     doc_fails = True
