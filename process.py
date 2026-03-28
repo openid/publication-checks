@@ -220,11 +220,12 @@ def main() -> int:
                                 current_extensions.add(ext)
                         missing = prev_extensions - current_extensions
                         if missing:
-                            echo_warn(
-                                f"WARNING: Previous version {prev_stem} included "
+                            echo_error(
+                                f"FAIL: Previous version {prev_stem} included "
                                 f"{', '.join(f'.{e}' for e in sorted(missing))} "
                                 f"but this submission does not"
                             )
+                            doc_fails = True
                         else:
                             echo_good("PASS: Companion files match previous version")
                 except FileNotFoundError:
