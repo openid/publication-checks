@@ -191,6 +191,8 @@ def main() -> int:
 
         if versioned_name.endswith("-final"):
             unversioned_name = versioned_name[:-6]
+        elif re.search(r'-ID\d$', versioned_name):
+            unversioned_name = re.sub(r'-ID\d$', '', versioned_name)
         else:
             unversioned_name = re.sub(r'-\d{1,2}$', '', versioned_name)
 
@@ -223,6 +225,16 @@ def main() -> int:
             html_fails, md_fails, xml_fails = _check_copy_results(
                 versioned_name, unversioned_name, to_publish,
                 state_suffix="-final",
+            )
+
+        elif state == "IMPLEMENTERS":
+            print("Do IMPLEMENTERS copies")
+            _do_draft_copies(
+                file, file_path, dir_of_file, versioned_name,
+                unversioned_name, to_publish, published_links,
+            )
+            html_fails, md_fails, xml_fails = _check_copy_results(
+                versioned_name, unversioned_name, to_publish,
             )
 
         elif state == "DRAFT_ERRATA":

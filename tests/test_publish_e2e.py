@@ -281,3 +281,185 @@ def test_errata_publish_uses_errata_suffix(tmp_path, run_publish):
     assert len(final_mds) == 0, (
         f"Bug: errata md got -final suffix instead of -errata#. Got: {sorted(published)}"
     )
+
+
+@SKIP_NO_NETWORK
+def test_implementers_publish(tmp_path, run_publish):
+    """IMPLEMENTERS draft should produce versioned + unversioned .html and .md."""
+    today = today_str()
+    html = _build_spec_html(
+        title="OpenID Connect Test 1.0 - Implementers Draft 2",
+        date=today,
+        year=today[:4],
+        include_history=False,
+    )
+    spec_files = {
+        "connect/openid-connect-test-1_0-ID2.html": html,
+        "connect/openid-connect-test-1_0-ID2.md": "# Test spec\n",
+    }
+    repo_path, scripts_path = create_test_repo(
+        tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
+    )
+    to_publish = _setup_publish_dir(repo_path)
+
+    result = run_publish(repo_path, scripts_path)
+
+    assert result.returncode == 0, (
+        f"Expected exit 0 but got {result.returncode}.\n"
+        f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+    )
+    assert "CONGRATULATIONS" in result.stdout
+
+    published = {p.name for p in to_publish.iterdir()}
+    assert "openid-connect-test-1_0-ID2.html" in published, (
+        f"Versioned HTML missing. Got: {published}"
+    )
+    assert "openid-connect-test-1_0-ID2.md" in published, (
+        f"Versioned MD missing. Got: {published}"
+    )
+    assert "openid-connect-test-1_0.html" in published, (
+        f"Unversioned HTML missing. Got: {published}"
+    )
+    assert "openid-connect-test-1_0.md" in published, (
+        f"Unversioned MD missing. Got: {published}"
+    )
+
+
+@SKIP_NO_NETWORK
+def test_draft_with_xml_instead_of_md(tmp_path, run_publish):
+    """Draft HTML + .xml (no .md) should succeed and produce unversioned copies."""
+    today = today_str()
+    html = _build_spec_html(
+        title="OpenID Connect Test 1.0 - Draft 01",
+        date=today,
+        year=today[:4],
+    )
+    spec_files = {
+        "connect/openid-connect-test-1_0-01.html": html,
+        "connect/openid-connect-test-1_0-01.xml": "<spec/>",
+    }
+    repo_path, scripts_path = create_test_repo(
+        tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
+    )
+    to_publish = _setup_publish_dir(repo_path)
+
+    result = run_publish(repo_path, scripts_path)
+
+    assert result.returncode == 0, (
+        f"Expected exit 0 but got {result.returncode}.\n"
+        f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+    )
+
+    published = {p.name for p in to_publish.iterdir()}
+    assert "openid-connect-test-1_0.html" in published, (
+        f"Unversioned HTML missing. Got: {published}"
+    )
+    assert "openid-connect-test-1_0.xml" in published, (
+        f"Unversioned XML missing. Got: {published}"
+    )
+
+
+@SKIP_NO_NETWORK
+def test_final_with_zip(tmp_path, run_publish):
+    """Final HTML + .md + .zip should produce -final.zip and unversioned .zip."""
+    today = today_str()
+    html = _build_spec_html(
+        title="OpenID Connect Test 1.0",
+        date=today,
+        year=today[:4],
+        include_history=False,
+        intended_status="Final",
+    )
+    spec_files = {
+        "connect/openid-connect-test-1_0-final.html": html,
+        "connect/openid-connect-test-1_0-final.md": "# Test spec\n",
+        "connect/openid-connect-test-1_0-final.zip": "FAKE-ZIP-DATA",
+    }
+    repo_path, scripts_path = create_test_repo(
+        tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
+    )
+    to_publish = _setup_publish_dir(repo_path)
+
+    result = run_publish(repo_path, scripts_path)
+
+    assert result.returncode == 0, (
+        f"Expected exit 0 but got {result.returncode}.\n"
+        f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+    )
+
+    published = {p.name for p in to_publish.iterdir()}
+    assert "openid-connect-test-1_0-final.zip" in published, (
+        f"-final ZIP missing. Got: {published}"
+    )
+    assert "openid-connect-test-1_0.zip" in published, (
+        f"Unversioned ZIP missing. Got: {published}"
+    )
+
+
+@SKIP_NO_NETWORK
+def test_draft_versioned_copy_exists(tmp_path, run_publish):
+    """Draft publish should create BOTH versioned and unversioned HTML."""
+    today = today_str()
+    html = _build_spec_html(
+        title="OpenID Connect Test 1.0 - Draft 01",
+        date=today,
+        year=today[:4],
+    )
+    spec_files = {
+        "connect/openid-connect-test-1_0-01.html": html,
+        "connect/openid-connect-test-1_0-01.md": "# Test spec\n",
+    }
+    repo_path, scripts_path = create_test_repo(
+        tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
+    )
+    to_publish = _setup_publish_dir(repo_path)
+
+    result = run_publish(repo_path, scripts_path)
+
+    assert result.returncode == 0, (
+        f"Expected exit 0 but got {result.returncode}.\n"
+        f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+    )
+
+    published = {p.name for p in to_publish.iterdir()}
+    assert "openid-connect-test-1_0-01.html" in published, (
+        f"Versioned HTML missing. Got: {published}"
+    )
+    assert "openid-connect-test-1_0.html" in published, (
+        f"Unversioned HTML missing. Got: {published}"
+    )
+
+
+@SKIP_NO_NETWORK
+def test_errata_creates_unversioned_copy(tmp_path, run_publish):
+    """ERRATA should create an unversioned copy alongside the -errata# copy."""
+    today = today_str()
+    html = _build_spec_html(
+        title="OpenID Connect Test 1.0 incorporating errata set 1",
+        date=today,
+        year=today[:4],
+        include_history=False,
+        intended_status="Final",
+    )
+    spec_files = {
+        "connect/openid-connect-test-1_0-01.html": html,
+        "connect/openid-connect-test-1_0-01.md": "# Test spec\n",
+    }
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    to_publish = _setup_publish_dir(repo_path)
+
+    result = run_publish(repo_path, scripts_path)
+
+    assert result.returncode == 0, (
+        f"Expected exit 0 but got {result.returncode}.\n"
+        f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+    )
+
+    published = {p.name for p in to_publish.iterdir()}
+    errata_htmls = [f for f in published if "-errata" in f and f.endswith(".html")]
+    assert len(errata_htmls) >= 1, (
+        f"Expected at least one -errata# HTML file. Got: {sorted(published)}"
+    )
+    assert "openid-connect-test-1_0.html" in published, (
+        f"Unversioned HTML missing. Got: {sorted(published)}"
+    )
