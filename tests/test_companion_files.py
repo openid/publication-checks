@@ -54,7 +54,7 @@ def test_md_with_includes_but_no_zip_fails(tmp_path):
         date=today,
         year=today[:4],
     )
-    md_with_includes = "# Spec\n\n<{{examples/response.json}}>\n"
+    md_with_includes = "# Spec\n\n<{{examples/response.json}}\n"
     spec_files = {
         "connect/openid-connect-test-1_0-01.html": html,
         "connect/openid-connect-test-1_0-01.md": md_with_includes,

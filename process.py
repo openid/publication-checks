@@ -173,7 +173,7 @@ def main() -> int:
                     # Markdown uses <{{path/file.ext}}> for file includes.
                     # Note: {{RFC6749}} is a citation reference, NOT a file include.
                     has_includes = bool(
-                        re.search(r'<\{\{[^}]+\}\}>', md_content)  # <{{examples/file.json}}>
+                        re.search(r'<\{\{[^}]+\}\}', md_content)  # <{{examples/file.json}}
                         or re.search(r'!include\b', md_content, re.IGNORECASE)
                         or re.search(r'\{%\s*include', md_content)  # {% include %}
                         or re.search(r'^#include\b', md_content, re.MULTILINE)
@@ -220,11 +220,12 @@ def main() -> int:
                                 current_extensions.add(ext)
                         missing = prev_extensions - current_extensions
                         if missing:
-                            echo_warn(
-                                f"WARNING: Previous version {prev_stem} included "
+                            echo_error(
+                                f"FAIL: Previous version {prev_stem} included "
                                 f"{', '.join(f'.{e}' for e in sorted(missing))} "
                                 f"but this submission does not"
                             )
+                            doc_fails = True
                         else:
                             echo_good("PASS: Companion files match previous version")
                 except FileNotFoundError:
@@ -313,8 +314,8 @@ def main() -> int:
             # Check that no final already exists for this spec
             if final_exists_in_csv(unversioned_name, csv_path):
                 echo_error(
-                    "FAIL: A final spec already exists. Post-final drafts "
-                    "must include 'incorporating errata set N' in the title"
+                    "FAIL: A final spec already exists. Post-final drafts must be titled like "
+                    "'Spec Name 1.0 - Draft NN incorporating errata set N'"
                 )
                 doc_fails = True
         elif state == "FINAL":
@@ -452,10 +453,6 @@ def main() -> int:
         ref_result = spec_validator.content_ref(content, check_url=True, debug=debug)
         if ref_result.get("all_accessible") is False:
             echo_error(f"FAIL: Problem with References in {file}.")
-            echo_error(
-                "This might be due to a link not responding to HEAD request "
-                "- ** known roadmap defect in this tool"
-            )
             doc_fails = True
         else:
             echo_good(f"PASS: References in {file} is good")
@@ -487,7 +484,8 @@ def main() -> int:
             struct_result["structure"].get(s) for s in required_sections
         )
         if not struct_ok:
-            echo_error(f"FAIL: Problem with structure in {file}.")
+            missing = [s for s in required_sections if not struct_result["structure"].get(s)]
+            echo_error(f"FAIL: Problem with structure in {file}. Missing sections: {', '.join(missing)}")
             doc_fails = True
         else:
             echo_good(f"PASS: Structure of {file} is good")

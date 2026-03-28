@@ -241,6 +241,10 @@ def test_process_py_on_pr161(tmp_path, pr161_files):
     # The structure check should flag the missing ABSTRACT
     assert "Problem with structure" in result.stdout
 
+    # The IDA spec's .md has <{{examples/...}} includes but no .zip
+    assert "references external files" in result.stdout
+    assert ".zip" in result.stdout
+
 
 # ===================================================================
 # Publish test: what files does publish.py create for a draft errata?
