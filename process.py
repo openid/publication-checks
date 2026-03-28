@@ -362,6 +362,30 @@ def main() -> int:
             else:
                 echo_good(f"PASS: No draft disclaimer in {file}")
 
+        # -- IETF IPR boilerplate must not be present ---
+        ietf_ipr_strings = [
+            "IETF Trust",
+            "BCP 78",
+            "BCP 79",
+            "subject to the rights, licenses and restrictions contained in BCP",
+        ]
+        found_ipr = [s for s in ietf_ipr_strings if s in content]
+        if found_ipr:
+            matched = ", ".join(f"'{s}'" for s in found_ipr)
+            if state in ("FINAL", "ERRATA"):
+                echo_error(
+                    f"FAIL: {file} contains IETF Trust IPR boilerplate text ({matched}). "
+                    "OIDF specs must not include IETF IPR notices."
+                )
+                doc_fails = True
+            else:
+                echo_warn(
+                    f"WARNING: {file} contains IETF Trust IPR boilerplate text ({matched}). "
+                    "Please remove before final publication."
+                )
+        else:
+            echo_good(f"PASS: No IETF Trust IPR boilerplate in {file}")
+
         # -- Title consistency (<title> vs <h1>) ----------------------------
         title_result = spec_validator.content_title(content, debug)
         if not title_result["match"]:
@@ -418,6 +442,23 @@ def main() -> int:
             doc_fails = True
         else:
             echo_good(f"PASS: References in {file} is good")
+
+        # -- OpenID references should use canonical URLs ---
+        non_canonical_patterns = [r'openid\.github\.io', r'openid\.bitbucket\.io']
+        non_canonical_urls = []
+        for pattern in non_canonical_patterns:
+            non_canonical_urls.extend(re.findall(
+                r'https?://[^\s"<>]*' + pattern + r'[^\s"<>]*', content
+            ))
+        if non_canonical_urls:
+            unique_urls = sorted(set(non_canonical_urls))
+            url_list = ", ".join(unique_urls)
+            echo_warn(
+                f"WARNING: {file} references editor's draft URLs ({url_list}). "
+                "Consider using canonical https://openid.net/specs/ URLs instead."
+            )
+        else:
+            echo_good(f"PASS: No non-canonical OpenID reference URLs in {file}")
 
         # -- Structure -----------------------------------------------------
         struct_result = spec_validator.content_struct(content, debug)
