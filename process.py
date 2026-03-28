@@ -138,7 +138,30 @@ def main() -> int:
         xml_path = os.path.join("..", f"{stem}.xml")
 
         if not os.path.isfile(zip_path):
-            echo_warn(f"WARNING: zipped content called {stem}.zip not present.")
+            # If md source exists and references external files, zip is required
+            if os.path.isfile(md_path):
+                try:
+                    with open(md_path, "r", encoding="utf-8") as mdf:
+                        md_content = mdf.read()
+                    # Common include patterns in markdown specs
+                    has_includes = bool(
+                        re.search(r'\{\{[^}]+\}\}', md_content)  # {{file.md}}
+                        or re.search(r'!include\b', md_content, re.IGNORECASE)
+                        or re.search(r'\{%\s*include', md_content)  # {% include %}
+                        or re.search(r'^#include\b', md_content, re.MULTILINE)
+                    )
+                    if has_includes:
+                        echo_error(
+                            f"FAIL: {stem}.md references external files but no .zip archive "
+                            f"is provided. A .zip containing all source files is required."
+                        )
+                        doc_fails = True
+                    else:
+                        echo_warn(f"WARNING: zipped content called {stem}.zip not present.")
+                except (FileNotFoundError, UnicodeDecodeError):
+                    echo_warn(f"WARNING: zipped content called {stem}.zip not present.")
+            else:
+                echo_warn(f"WARNING: zipped content called {stem}.zip not present.")
 
         if not os.path.isfile(md_path) and not os.path.isfile(xml_path):
             echo_error(
@@ -146,6 +169,39 @@ def main() -> int:
                 f"Either a file called {stem}.md or called {stem}.xml is required."
             )
             doc_fails = True
+
+        # -- Check companion files match previous version -------------------
+        draft_num_match_pre = re.search(r'-(\d{1,2})\.html$', base_html)
+        if draft_num_match_pre:
+            draft_num_pre = int(draft_num_match_pre.group(1))
+            if draft_num_pre > 1:
+                # Derive previous draft stem from current basename: replace trailing digits
+                base_stem = os.path.splitext(base_html)[0]
+                prev_stem = re.sub(r'-\d{1,2}$', f"-{draft_num_pre - 1:02d}", base_stem)
+                try:
+                    with open(csv_path, "r", newline="") as csvf:
+                        csv_content = csvf.read()
+                    prev_extensions = set()
+                    for ext in ("html", "md", "xml", "zip", "txt"):
+                        if f"{prev_stem}.{ext}" in csv_content:
+                            prev_extensions.add(ext)
+                    if prev_extensions:
+                        current_extensions = set()
+                        for ext in ("html", "md", "xml", "zip", "txt"):
+                            check_path = os.path.join("..", f"{stem}.{ext}")
+                            if ext == "html" or os.path.isfile(check_path):
+                                current_extensions.add(ext)
+                        missing = prev_extensions - current_extensions
+                        if missing:
+                            echo_warn(
+                                f"WARNING: Previous version {prev_stem} included "
+                                f"{', '.join(f'.{e}' for e in sorted(missing))} "
+                                f"but this submission does not"
+                            )
+                        else:
+                            echo_good("PASS: Companion files match previous version")
+                except FileNotFoundError:
+                    pass
 
         # -- Duplicate check (check-draft) --------------------------------
         exit_code = spec_validator.check_draft_in_csv(base_html, csv_path)

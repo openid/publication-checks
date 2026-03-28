@@ -162,15 +162,15 @@ def test_draft_errata_accepted_e2e(tmp_path):
     because the title correctly references errata and a final exists."""
     today = _today_str()
     html = _build_spec_html(
-        title="OpenID Connect for Identity Assurance 1.0 incorporating errata set 1 - Draft 18",
+        title="OpenID Connect for Identity Assurance 1.0 incorporating errata set 1 - Draft 01",
         state_suffix="draft_errata",
         date=today,
         year=today[:4],
         include_history=True,
     )
     spec_files = {
-        "ekyc-ida/openid-connect-4-identity-assurance-1_0-18.html": html,
-        "ekyc-ida/openid-connect-4-identity-assurance-1_0-18.md": "# Spec\n",
+        "ekyc-ida/openid-connect-4-identity-assurance-1_0-01.html": html,
+        "ekyc-ida/openid-connect-4-identity-assurance-1_0-01.md": "# Spec\n",
     }
     repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
 
