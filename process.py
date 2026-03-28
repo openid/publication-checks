@@ -265,7 +265,11 @@ def main() -> int:
 
         # Derive versioned / unversioned names (same logic as shell)
         versioned_name = os.path.splitext(os.path.basename(file))[0]
-        unversioned_name = re.sub(r'-\d{1,2}$', '', versioned_name)
+        # Strip state-specific suffixes to get the base spec name:
+        #   -01 (draft), -final, -errata1, -ID2
+        unversioned_name = re.sub(
+            r'(?:-\d{1,2}|-final|-errata\d+|-ID\d+)$', '', versioned_name,
+        )
 
         # -- State / history consistency -----------------------------------
         if state == "UNKNOWN":

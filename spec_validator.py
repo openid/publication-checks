@@ -877,8 +877,9 @@ def check_draft_in_csv(draft_filename, csv_file='spec-list.csv'):
     # Extract just the filename without the directory path
     base_filename = os.path.basename(draft_filename)
     
-    if not re.match(PATTERNS['DRAFT'], base_filename) and not re.match(PATTERNS['FINAL'], base_filename):
-        print(f"Error: '{base_filename}' does not match the required DRAFT or FINAL pattern.")
+    valid_patterns = ['DRAFT', 'FINAL', 'IMPLEMENTERS', 'ERRATA']
+    if not any(re.match(PATTERNS[p], base_filename) for p in valid_patterns):
+        print(f"Error: '{base_filename}' does not match any recognised filename pattern.")
         return EXIT_INVALID_DRAFT_FILENAME
 
     try:
