@@ -168,30 +168,16 @@ def test_draft_errata_accepted_e2e(tmp_path):
 # PR #161 real-world test
 # ===================================================================
 
-_PUBLICATION_REPO = "/Users/joseph/Documents/openid/publication"
-_PR_BRANCH = "origin/propose/openid-connect-4-identity-assurance-1_0-17"
 
-
-@pytest.mark.skipif(
-    not os.path.isdir(_PUBLICATION_REPO),
-    reason="publication repo not available",
-)
-def test_pr161_ida_spec_is_draft_but_final_exists():
-    """PR #161's IDA spec is titled 'draft 17' without errata language,
-    so content_state correctly detects it as DRAFT. Since a final exists,
-    the post-final check in process.py would reject it."""
-    result = subprocess.run(
-        ["git", "show",
-         f"{_PR_BRANCH}:ekyc-ida/openid-connect-4-identity-assurance-1_0-17.html"],
-        cwd=_PUBLICATION_REPO,
-        capture_output=True,
+def test_pr161_ida_spec_is_draft_errata():
+    """PR #161's IDA spec is now titled 'draft 17 incorporating errata set 1',
+    so content_state correctly detects it as DRAFT_ERRATA."""
+    fixture_path = os.path.join(
+        os.path.dirname(__file__), "fixtures",
+        "openid-connect-4-identity-assurance-1_0-17.html",
     )
-    if result.returncode != 0:
-        pytest.skip("Could not load PR #161 file")
-    content = result.stdout.decode("utf-8")
+    with open(fixture_path, encoding="utf-8") as f:
+        content = f.read()
 
     state_result = spec_validator.content_state(content)
-    assert state_result["state"] == "DRAFT", (
-        "PR #161 IDA spec should be DRAFT (not DRAFT_ERRATA) - "
-        "the title says 'draft 17' without any errata language"
-    )
+    assert state_result["state"] == "DRAFT_ERRATA"

@@ -397,17 +397,17 @@ def check_url_accessibility(url, debug=False):
                 print(f"    Status: Accessible (HEAD {response.status_code})")
             return True
         # HEAD failed — retry with GET (some servers reject HEAD)
-        print(f"    URL {url}: HEAD returned {response.status_code}, retrying with GET")
+        print(f"    HEAD returned {response.status_code}, retrying with GET for {url}")
         response = requests.get(url, allow_redirects=True, timeout=30, stream=True)
         response.close()
         is_accessible = response.status_code == 200
         if is_accessible:
-            print(f"    URL {url}: GET returned {response.status_code} (OK)")
+            print(f"    GET returned {response.status_code} (OK) for {url}")
         else:
-            print(f"    URL {url}: GET returned {response.status_code} (FAIL)")
+            print(f"    GET returned {response.status_code} (FAIL) for {url}")
         return is_accessible
     except requests.RequestException as e:
-        print(f"    URL {url}: Error: {str(e)}")
+        print(f"    Error checking {url} - {str(e)}")
         return False
 
 def content_ref(content, check_url=False, debug=False):
