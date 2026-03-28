@@ -67,6 +67,8 @@ def _build_spec_html(title, year="2026", date="2026-03-20",
     """Build a minimal but realistic OpenID spec HTML document for testing."""
     history_section = ""
     if include_history:
+        # NOTE: Draft numbering starts at -00 per OIDF guidelines.
+        # This fixture uses -01 to test a second draft referencing its number.
         history_section = textwrap.dedent("""\
         <section id="appendix-A">
           <h2 id="name-document-history">

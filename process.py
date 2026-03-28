@@ -282,12 +282,12 @@ def main() -> int:
             # Check sequential draft numbering
             if draft_num_match:
                 draft_num = int(draft_num_match.group(1))
-                if draft_num > 0:
+                if draft_num >= 0:
                     prev_draft = f"{unversioned_name}-{draft_num - 1:02d}.html"
                     try:
                         with open(csv_path, "r", newline="") as csvf:
                             csv_content = csvf.read()
-                        if draft_num == 1 or prev_draft in csv_content:
+                        if draft_num == 0 or prev_draft in csv_content:
                             echo_good(f"PASS: Draft numbering is sequential")
                         else:
                             echo_warn(

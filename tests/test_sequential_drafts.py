@@ -26,18 +26,20 @@ _CSV_WITH_DRAFT_01 = (
 
 
 @SKIP_NO_NETWORK
-def test_draft_01_is_always_sequential(tmp_path):
-    """Draft -01 (first draft) should always pass the sequential check."""
+def test_draft_00_is_always_sequential(tmp_path):
+    """Draft -00 (first draft) should always pass the sequential check."""
     today = today_str()
     html = _build_spec_html(
-        title="OpenID Connect Test 1.0 - Draft 01",
+        title="OpenID Connect Test 1.0 - Draft 00",
 
         date=today,
         year=today[:4],
     )
+    # Replace the history reference to match draft -00
+    html = html.replace("<p>-01</p>", "<p>-00</p>")
     spec_files = {
-        "connect/openid-connect-test-1_0-01.html": html,
-        "connect/openid-connect-test-1_0-01.md": "# Spec\n",
+        "connect/openid-connect-test-1_0-00.html": html,
+        "connect/openid-connect-test-1_0-00.md": "# Spec\n",
     }
     repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
     result = run_python_script("process.py", repo_path, scripts_path)
