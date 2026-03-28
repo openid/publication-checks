@@ -64,20 +64,20 @@ class TestFilenameErrata:
         assert result["state"] == "ERRATA"
 
 
-class TestFilenameImplementors:
-    """Test that IMPLEMENTORS filenames are recognised correctly."""
+class TestFilenameImplementers:
+    """Test that IMPLEMENTERS filenames are recognised correctly."""
 
-    def test_implementors_draft(self):
+    def test_implementers_draft(self):
         result = spec_validator.filename_state("openid-connect-core-1_0-ID1.html")
-        assert result["state"] == "IMPLEMENTORS"
+        assert result["state"] == "IMPLEMENTERS"
 
-    def test_implementors_higher_number(self):
+    def test_implementers_higher_number(self):
         result = spec_validator.filename_state("openid-connect-core-1_0-ID3.html")
-        assert result["state"] == "IMPLEMENTORS"
+        assert result["state"] == "IMPLEMENTERS"
 
-    def test_implementors_different_spec(self):
+    def test_implementers_different_spec(self):
         result = spec_validator.filename_state("openid-federation-1_0-ID2.html")
-        assert result["state"] == "IMPLEMENTORS"
+        assert result["state"] == "IMPLEMENTERS"
 
 
 class TestFilenameCurrent:
@@ -149,7 +149,7 @@ class TestFilenameDebugMode:
         result = spec_validator.filename_state("readme.txt", debug=True)
         assert result["state"] == "UNKNOWN"
         # All states should appear in debug with match=None
-        for state in ["CURRENT", "DRAFT", "IMPLEMENTORS", "ERRATA", "FINAL"]:
+        for state in ["CURRENT", "DRAFT", "IMPLEMENTERS", "ERRATA", "FINAL"]:
             assert state in result["debug"]
             assert result["debug"][state]["match"] is None
 

@@ -147,51 +147,50 @@ class TestContentFinal:
         assert result["state"] != "FINAL"
 
 
-class TestContentImplementors:
-    """Test IMPLEMENTORS detection from HTML content.
+class TestContentImplementers:
+    """Test IMPLEMENTERS detection from HTML content.
 
-    Note: The IMPLEMENTORS_CONTENT pattern is r'.*?\\b\\d+\\.\\d+\\s*-\\s*implementor.*?(\\d+).*'.
-    DRAFT_CONTENT is checked before IMPLEMENTORS in the state_order. Titles
-    containing the word "Draft" followed by a number will match DRAFT first.
-    For IMPLEMENTORS to win, the title must match IMPLEMENTORS_CONTENT but
-    NOT DRAFT_CONTENT -- i.e., use "implementors" without the word "Draft".
+    The IMPLEMENTERS_CONTENT pattern matches "Implementers Draft N" specifically.
+    IMPLEMENTERS is checked before DRAFT in the state_order, so a title like
+    "Implementers Draft 2" resolves to IMPLEMENTERS, not DRAFT.
     """
 
-    def test_implementors_fixture_resolves_to_draft(self, implementors_html):
-        """The conftest fixture title contains 'Draft 1', so DRAFT wins."""
-        result = spec_validator.content_state(implementors_html)
-        assert result["state"] == "DRAFT"
+    def test_implementers_fixture_resolves_to_implementers(self, implementers_html):
+        """The conftest fixture title is 'Implementers Draft 1', so IMPLEMENTERS wins."""
+        result = spec_validator.content_state(implementers_html)
+        assert result["state"] == "IMPLEMENTERS"
 
-    def test_implementors_without_draft_keyword(self):
-        """Title with 'implementors' but no 'Draft' matches IMPLEMENTORS."""
+    def test_implementers_draft_2(self):
+        """'Implementers Draft 2' should resolve to IMPLEMENTERS."""
         html = (
             "<html><head>"
-            "<title>OpenID Example 1.0 - implementors version 1</title>"
+            "<title>OpenID Example 1.0 - Implementers Draft 2</title>"
             "</head><body>"
-            "<h1>OpenID Example 1.0 - implementors version 1</h1>"
+            "<h1>OpenID Example 1.0 - Implementers Draft 2</h1>"
             "</body></html>"
         )
         result = spec_validator.content_state(html)
-        assert result["state"] == "IMPLEMENTORS"
+        assert result["state"] == "IMPLEMENTERS"
 
-    def test_implementors_higher_number(self):
+    def test_implementers_beats_draft_when_both_present(self):
+        """When 'Implementers Draft N' is in the title, IMPLEMENTERS wins over DRAFT."""
         html = (
             "<html><head>"
-            "<title>OpenID Federation 1.0 - implementors edition 3</title>"
+            "<title>OpenID Example 1.0 - Implementers Draft 1</title>"
             "</head><body>"
-            "<h1>OpenID Federation 1.0 - implementors edition 3</h1>"
+            "<h1>OpenID Example 1.0 - Implementers Draft 1</h1>"
             "</body></html>"
         )
         result = spec_validator.content_state(html)
-        assert result["state"] == "IMPLEMENTORS"
+        assert result["state"] == "IMPLEMENTERS"
 
-    def test_draft_beats_implementors_when_both_present(self):
-        """When 'Implementors Draft N' is in the title, DRAFT matches first."""
+    def test_plain_draft_still_resolves_to_draft(self):
+        """A plain 'Draft 01' title (no 'Implementers') still resolves to DRAFT."""
         html = (
             "<html><head>"
-            "<title>OpenID Example 1.0 - Implementors Draft 1</title>"
+            "<title>OpenID Example 1.0 - Draft 01</title>"
             "</head><body>"
-            "<h1>OpenID Example 1.0 - Implementors Draft 1</h1>"
+            "<h1>OpenID Example 1.0 - Draft 01</h1>"
             "</body></html>"
         )
         result = spec_validator.content_state(html)
@@ -297,7 +296,7 @@ class TestContentDebugMode:
 
     def test_debug_shows_all_content_patterns(self, final_html):
         result = spec_validator.content_state(final_html, debug=True)
-        for key in ["ERRATA_CONTENT", "DRAFT_CONTENT", "IMPLEMENTORS_CONTENT", "FINAL_CONTENT"]:
+        for key in ["ERRATA_CONTENT", "DRAFT_CONTENT", "IMPLEMENTERS_CONTENT", "FINAL_CONTENT"]:
             assert key in result["debug"]
 
 

@@ -35,7 +35,7 @@ EXIT_DRAFT_FOUND_IN_CSV = 140
 PATTERNS = {
     'CURRENT': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)\.html$',     
     'DRAFT': r'^[\w-]+-\d+_\d+-\d{2}\.html$',
-    'IMPLEMENTORS': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)-ID(\d)\.html$',
+    'IMPLEMENTERS': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)-ID(\d)\.html$',
     'ERRATA': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)-errata(\d+)\.html$',
     'FINAL': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)-final\.html$',
     'TITLE_TAG': r'<title>(.*?)</title>',
@@ -43,7 +43,7 @@ PATTERNS = {
     'DRAFT_CONTENT': r'.*?\b(?:\d+\.\d+\s*[-–—]\s*)?[Dd]raft\s+(\d+).*',
     'ERRATA_CONTENT': r'(?i).*?(?:errata\s*set\s*(\d+)|\berrata.*?(\d+)).*',
     'FINAL_CONTENT': r'(?i)(?:<dd\s+class="intended-status">\s*Final\s*</dd>|<td\s+class="header">\s*Final\s*</td>)',
-    'IMPLEMENTORS_CONTENT': r'.*?\b\d+\.\d+\s*-\s*implementor.*?(\d+).*',
+    'IMPLEMENTERS_CONTENT': r'.*?\b\d+\.\d+\s*[-–—]\s*[Ii]mplementers?\s+[Dd]raft\s+(\d+).*',
     'ABSTRACT': r'(?:<h2[^>]*id="abstract"[^>]*>\s*<a[^>]*>Abstract</a>\s*</h2>|<h3>\s*Abstract\s*</h3>)',
     'INTRODUCTION': r'(?:<(?:h2|h3)[^>]*(?:id="name-introduction")?[^>]*>(?:\d+\.?&nbsp;)?.*?Introduction(?:</a>)?\s*</(?:h2|h3)>)',
     'NORMATIVE_REFERENCES': r'(?:<(?:h2|h3)[^>]*(?:id="name-normative-references")?[^>]*>.*?Normative [Rr]eferences(?:</a>)?\s*</(?:h2|h3)>)',
@@ -67,7 +67,7 @@ PATTERNS = {
 def filename_state(filename, debug=False):
     result = {"state": "UNKNOWN", "debug": {}}
     for state, pattern in PATTERNS.items():
-        if state in ['CURRENT', 'DRAFT', 'IMPLEMENTORS', 'ERRATA', 'FINAL']:
+        if state in ['CURRENT', 'DRAFT', 'IMPLEMENTERS', 'ERRATA', 'FINAL']:
             match = re.match(pattern, filename)
             if match:
                 result["state"] = state
@@ -102,7 +102,7 @@ def content_state(content, debug=False):
     
     if title_tag_match and h1_title_match:
         title_content = title_tag_match.group(1)
-        state_order = ['ERRATA', 'DRAFT', 'IMPLEMENTORS', 'FINAL']
+        state_order = ['ERRATA', 'IMPLEMENTERS', 'DRAFT', 'FINAL']
         for state in state_order:
             pattern = PATTERNS[f'{state}_CONTENT']
             match = re.search(pattern, title_content if state != 'FINAL' else content, re.IGNORECASE | re.DOTALL)
@@ -760,7 +760,7 @@ def content_filename_match(content, filename, debug=False):
     
     # Check filename
     for file_type, pattern in PATTERNS.items():
-        if file_type in ['CURRENT', 'DRAFT', 'IMPLEMENTORS', 'ERRATA', 'FINAL']:
+        if file_type in ['CURRENT', 'DRAFT', 'IMPLEMENTERS', 'ERRATA', 'FINAL']:
             match = re.match(pattern, filename)
             if match:
                 filename_type = file_type
@@ -779,7 +779,7 @@ def content_filename_match(content, filename, debug=False):
     title_match = re.search(PATTERNS['TITLE_TAG'], content, re.DOTALL | re.IGNORECASE)
     if title_match:
         title_content = title_match.group(1)
-        for content_type_check in ['DRAFT', 'ERRATA', 'IMPLEMENTORS']:
+        for content_type_check in ['ERRATA', 'IMPLEMENTERS', 'DRAFT']:
             pattern = PATTERNS[f'{content_type_check}_CONTENT']
             match = re.search(pattern, title_content, re.IGNORECASE)
             if match:

@@ -16,7 +16,7 @@ Validation tools for the OpenID Foundation specification publication pipeline.
 | FINAL | Status header: Final | No | `spec-1_0-final.html` |
 | ERRATA | "incorporating errata set N" | No | `spec-1_0-errata1.html` |
 | DRAFT_ERRATA | errata + draft in title | Yes | `spec-1_0-01.html` |
-| IMPLEMENTORS | "Implementors Draft N" | No | `spec-1_0-ID1.html` |
+| IMPLEMENTERS | "Implementers Draft N" | No | `spec-1_0-ID1.html` |
 
 Draft numbers start at -00 and must be zero-padded (two digits).
 

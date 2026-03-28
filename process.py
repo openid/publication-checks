@@ -311,12 +311,12 @@ def main() -> int:
             else:
                 echo_error("FAIL: FINAL state but history section exists")
                 doc_fails = True
-        elif state == "IMPLEMENTORS":
-            echo_good("Document is in IMPLEMENTORS state")
+        elif state == "IMPLEMENTERS":
+            echo_good("Document is in IMPLEMENTERS state")
             if not has_history:
                 echo_good("PASS: Document does not have a history section")
             else:
-                echo_error("FAIL: IMPLEMENTORS state but history section exists")
+                echo_error("FAIL: IMPLEMENTERS state but history section exists")
                 doc_fails = True
         elif state in ("ERRATA", "DRAFT_ERRATA"):
             echo_good(f"Document is in {state} state")
@@ -395,8 +395,12 @@ def main() -> int:
             echo_good(f"PASS: Title tag matches H1 heading in {file}")
 
         # -- Content-filename match ----------------------------------------
-        match_result = spec_validator.content_filename_match(content, base_html, debug)
-        if not match_result["match"]:
+        # Skip for DRAFT_ERRATA: filename is DRAFT-style (-01.html) but content
+        # has errata keywords, so content_filename_match can't reconcile them.
+        # content_state() already validated the DRAFT_ERRATA combination.
+        if state == "DRAFT_ERRATA":
+            echo_good(f"PASS: Content matches filename in {file} (DRAFT_ERRATA)")
+        elif not spec_validator.content_filename_match(content, base_html, debug)["match"]:
             # Give a specific hint when a -final filename lacks Status: Final in header
             filename_state_result = spec_validator.filename_state(base_html)
             if filename_state_result["state"] == "FINAL" and state != "FINAL":

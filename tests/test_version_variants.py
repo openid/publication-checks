@@ -60,9 +60,9 @@ class TestFilenameVersionVariants:
         ("1_0", "openid-example-1_0-ID1.html"),
         ("2_0", "openid-example-2_0-ID2.html"),
     ])
-    def test_implementors_versions(self, version, filename):
+    def test_implementers_versions(self, version, filename):
         result = spec_validator.filename_state(filename)
-        assert result["state"] == "IMPLEMENTORS"
+        assert result["state"] == "IMPLEMENTERS"
 
     @pytest.mark.parametrize("version,filename", [
         ("1_0", "openid-example-1_0.html"),

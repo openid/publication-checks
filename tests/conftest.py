@@ -181,9 +181,9 @@ def errata_html():
 
 
 @pytest.fixture
-def implementors_html():
+def implementers_html():
     return _build_spec_html(
-        title="OpenID Connect Example 1.0 - Implementors Draft 1",
+        title="OpenID Connect Example 1.0 - Implementers Draft 1",
         include_history=True,
     )
 

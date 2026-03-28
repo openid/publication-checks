@@ -184,7 +184,7 @@ def test_final_publish(tmp_path, run_publish):
 def test_unknown_state_fails(tmp_path, run_publish):
     """An unrecognisable title should cause the script to exit 1."""
     today = today_str()
-    # Build HTML with a title that doesn't match DRAFT/FINAL/ERRATA/IMPLEMENTORS
+    # Build HTML with a title that doesn't match DRAFT/FINAL/ERRATA/IMPLEMENTERS
     html = _build_spec_html(
         title="Some Random Document With No State Marker",
 
