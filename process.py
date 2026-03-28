@@ -169,9 +169,11 @@ def main() -> int:
                 try:
                     with open(md_path, "r", encoding="utf-8") as mdf:
                         md_content = mdf.read()
-                    # Common include patterns in markdown specs
+                    # Common file include patterns in markdown specs.
+                    # Markdown uses <{{path/file.ext}}> for file includes.
+                    # Note: {{RFC6749}} is a citation reference, NOT a file include.
                     has_includes = bool(
-                        re.search(r'\{\{[^}]+\}\}', md_content)  # {{file.md}}
+                        re.search(r'<\{\{[^}]+\}\}>', md_content)  # <{{examples/file.json}}>
                         or re.search(r'!include\b', md_content, re.IGNORECASE)
                         or re.search(r'\{%\s*include', md_content)  # {% include %}
                         or re.search(r'^#include\b', md_content, re.MULTILINE)
