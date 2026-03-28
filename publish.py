@@ -102,14 +102,16 @@ def main() -> int:
     published_links: list[str] = []
 
     # ---- Fetch spec-list.csv ---------------------------------------------
-    csv_data = spec_validator.get_spec_list_csv()
-    if csv_data is None:
-        echo_error("OpenID Specs not available. Exiting script.")
-        return 1
-
     csv_path = os.path.join(_SCRIPT_DIR, "spec-list.csv")
-    with open(csv_path, "w", newline="") as f:
-        f.write(csv_data)
+    if os.path.isfile(csv_path) and os.environ.get("SKIP_CSV_FETCH"):
+        print("Using existing spec-list.csv (SKIP_CSV_FETCH is set)")
+    else:
+        csv_data = spec_validator.get_spec_list_csv()
+        if csv_data is None:
+            echo_error("OpenID Specs not available. Exiting script.")
+            return 1
+        with open(csv_path, "w", newline="") as f:
+            f.write(csv_data)
 
     # ---- Get changed HTML files via git diff -----------------------------
     try:

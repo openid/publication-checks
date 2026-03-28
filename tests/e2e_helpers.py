@@ -221,6 +221,8 @@ def run_python_script(
     import sys
 
     env = os.environ.copy()
+    # Use pre-seeded spec-list.csv instead of fetching from network
+    env["SKIP_CSV_FETCH"] = "1"
     if env_overrides:
         env.update(env_overrides)
 
