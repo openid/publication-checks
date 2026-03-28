@@ -145,6 +145,39 @@ def main() -> int:
         echo_error("FAIL: More than one WG sub-directory updated.")
         wg_fails = True
 
+    # ---- Check WG directory is a known one --------------------------------
+    # The known WG directories are the actual directories in the repo root,
+    # excluding infrastructure directories. This way, adding a new WG just
+    # requires creating the directory in the publication repo.
+    repo_root = os.path.abspath(os.path.join(_SCRIPT_DIR, ".."))
+    # List directories on origin/main (not the working tree, which could
+    # contain directories added by the PR branch to bypass the check).
+    try:
+        result = subprocess.run(
+            ["git", "-C", repo_root, "ls-tree", "--name-only", "-d", "origin/main"],
+            capture_output=True, text=True, check=True,
+        )
+        known_dirs = {
+            d for d in result.stdout.strip().splitlines()
+            if not d.startswith(".")
+            and d not in ("sync", "to-publish")
+        }
+    except subprocess.CalledProcessError:
+        # Fallback to working tree if git command fails (e.g., in tests)
+        known_dirs = {
+            d for d in os.listdir(repo_root)
+            if os.path.isdir(os.path.join(repo_root, d))
+            and not d.startswith(".")
+            and d not in ("sync", "to-publish")
+        }
+    for wg_dir in unique_dirs:
+        if wg_dir not in known_dirs:
+            echo_error(
+                f"FAIL: '{wg_dir}' is not a recognised Working Group directory. "
+                f"Known directories: {', '.join(sorted(known_dirs))}"
+            )
+            wg_fails = True
+
     # ---- Process each changed HTML file ---------------------------------
     any_fails = False
 

@@ -146,10 +146,21 @@ def create_test_repo(
     _git("config", "user.email", "test@example.com")
     _git("config", "user.name", "Test User")
 
-    # Initial commit on main (needed so origin/main ref exists)
+    # Initial commit on main with WG directories (needed so origin/main
+    # ref exists and so process.py can discover valid WG directories).
     readme = repo_path / "README.md"
     readme.write_text("# Test publication repo\n")
     _git("add", "README.md")
+
+    # Create WG directories from the spec_files paths so process.py
+    # recognises them when checking origin/main.
+    wg_dirs = {Path(p).parts[0] for p in spec_files if "/" in p}
+    for wg_dir in wg_dirs:
+        gitkeep = repo_path / wg_dir / ".gitkeep"
+        gitkeep.parent.mkdir(parents=True, exist_ok=True)
+        gitkeep.write_text("")
+        _git("add", str(Path(wg_dir) / ".gitkeep"))
+
     _git("commit", "-m", "Initial commit")
 
     # Create a local branch named ``origin/main`` that points at main.
