@@ -235,3 +235,49 @@ def test_missing_source_fails(tmp_path, run_publish):
         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
     assert "requires corresponding source" in result.stdout
+
+
+@SKIP_NO_NETWORK
+def test_errata_publish_uses_errata_suffix(tmp_path, run_publish):
+    """ERRATA should create -errata# suffixed files, NOT -final.
+
+    This verifies the fix for the publish.sh bug where ERRATA companion
+    files (zip, md, xml, txt) were incorrectly copied with -final suffix.
+    """
+    today = today_str()
+    html = _build_spec_html(
+        title="OpenID Connect Test 1.0 incorporating errata set 1",
+        date=today,
+        year=today[:4],
+        include_history=False,
+        intended_status="Final",
+    )
+    spec_files = {
+        "connect/openid-connect-test-1_0-01.html": html,
+        "connect/openid-connect-test-1_0-01.md": "# Test spec\n",
+    }
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    to_publish = _setup_publish_dir(repo_path)
+
+    result = run_publish(repo_path, scripts_path)
+
+    assert result.returncode == 0, (
+        f"Expected exit 0 but got {result.returncode}.\n"
+        f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+    )
+
+    published = {p.name for p in to_publish.iterdir()}
+    # Should have an -errata# suffix (number depends on what's on openid.net)
+    errata_htmls = [f for f in published if "-errata" in f and f.endswith(".html")]
+    assert len(errata_htmls) >= 1, (
+        f"Expected at least one -errata# HTML file. Got: {sorted(published)}"
+    )
+    errata_mds = [f for f in published if "-errata" in f and f.endswith(".md")]
+    assert len(errata_mds) >= 1, (
+        f"Expected at least one -errata# MD file. Got: {sorted(published)}"
+    )
+    # Should NOT have -final suffix for the errata companion files
+    final_mds = [f for f in published if f.endswith("-final.md")]
+    assert len(final_mds) == 0, (
+        f"Bug: errata md got -final suffix instead of -errata#. Got: {sorted(published)}"
+    )
