@@ -121,6 +121,19 @@ class TestContentFinal:
         result = spec_validator.content_state(html)
         assert result["state"] == "FINAL"
 
+    def test_final_via_status_class(self):
+        """Some xml2rfc specs use <dd class="status">Final</dd> (without 'intended-')."""
+        html = (
+            "<html><head>"
+            "<title>OpenID Example 1.0</title>"
+            "</head><body>"
+            "<h1>OpenID Example 1.0</h1>"
+            '<dd class="status">Final</dd>'
+            "</body></html>"
+        )
+        result = spec_validator.content_state(html)
+        assert result["state"] == "FINAL"
+
     def test_final_via_header_table(self):
         """Older specs use <td class="header">Final</td>."""
         html = (
