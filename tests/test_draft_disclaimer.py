@@ -1,8 +1,6 @@
 """Tests for #75: Final/Errata specs must not contain the draft disclaimer."""
 
-import datetime
 import os
-import subprocess
 import sys
 
 import pytest
@@ -13,7 +11,9 @@ if _TESTS_DIR not in sys.path:
 sys.path.insert(0, os.path.join(_TESTS_DIR, ".."))
 
 from conftest import _build_spec_html  # noqa: E402
-from e2e_helpers import create_test_repo, run_python_script  # noqa: E402
+from e2e_helpers import (  # noqa: E402
+    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+)
 
 pytestmark = pytest.mark.e2e
 
@@ -25,35 +25,13 @@ _CSV_WITH_FINAL = (
 )
 
 
-def _today_str():
-    return datetime.date.today().isoformat()
-
-
-def _network_available():
-    try:
-        result = subprocess.run(
-            ["curl", "-sf", "--max-time", "5", "-o", "/dev/null",
-             "https://openid.net/specs/"],
-            capture_output=True,
-        )
-        return result.returncode == 0
-    except FileNotFoundError:
-        return False
-
-
-_SKIP_NO_NETWORK = pytest.mark.skipif(
-    not _network_available(),
-    reason="openid.net unreachable",
-)
-
-
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_final_with_draft_disclaimer_fails(tmp_path):
     """A FINAL spec containing the draft disclaimer should fail."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0",
-        state_suffix="final",
+
         date=today,
         year=today[:4],
         include_history=False,
@@ -75,13 +53,13 @@ def test_final_with_draft_disclaimer_fails(tmp_path):
     assert "not an OIDF International Standard" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_final_without_draft_disclaimer_passes(tmp_path):
     """A FINAL spec without the draft disclaimer should pass this check."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0",
-        state_suffix="final",
+
         date=today,
         year=today[:4],
         include_history=False,
@@ -98,13 +76,13 @@ def test_final_without_draft_disclaimer_passes(tmp_path):
     assert "No draft disclaimer" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_draft_with_disclaimer_is_fine(tmp_path):
     """A DRAFT spec is allowed to have the disclaimer - no check applied."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )

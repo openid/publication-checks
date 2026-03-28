@@ -22,11 +22,38 @@ From ``openid-workflow/``, ``git -C ../. diff …`` correctly targets the repo r
 
 from __future__ import annotations
 
+import datetime
 import os
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Dict, Optional
+
+import pytest
+
+
+def today_str() -> str:
+    """Return today's date as YYYY-MM-DD."""
+    return datetime.date.today().isoformat()
+
+
+def network_available() -> bool:
+    """Return True if we can reach openid.net (quick check)."""
+    try:
+        result = subprocess.run(
+            ["curl", "-sf", "--max-time", "5", "-o", "/dev/null",
+             "https://openid.net/specs/"],
+            capture_output=True,
+        )
+        return result.returncode == 0
+    except FileNotFoundError:
+        return False
+
+
+SKIP_NO_NETWORK = pytest.mark.skipif(
+    not network_available(),
+    reason="openid.net unreachable",
+)
 
 
 # Absolute path to the real publication-checks repo root.

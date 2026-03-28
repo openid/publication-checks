@@ -13,9 +13,7 @@ with ``pytest.mark.e2e`` so they can be selected or deselected easily.
 
 from __future__ import annotations
 
-import datetime
 import os
-import subprocess
 import sys
 
 import pytest
@@ -26,32 +24,11 @@ if _TESTS_DIR not in sys.path:
     sys.path.insert(0, _TESTS_DIR)
 
 from conftest import _build_spec_html  # noqa: E402
-from e2e_helpers import create_test_repo, run_python_script  # noqa: E402
-
-pytestmark = pytest.mark.e2e
-
-
-def _network_available() -> bool:
-    """Return True if we can reach openid.net (quick check)."""
-    try:
-        result = subprocess.run(
-            ["curl", "-sf", "--max-time", "5", "-o", "/dev/null",
-             "https://openid.net/specs/"],
-            capture_output=True,
-        )
-        return result.returncode == 0
-    except FileNotFoundError:
-        return False
-
-
-_SKIP_NO_NETWORK = pytest.mark.skipif(
-    not _network_available(),
-    reason="openid.net is unreachable – network required for publish e2e tests",
+from e2e_helpers import (  # noqa: E402
+    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
 )
 
-
-def _today_str() -> str:
-    return datetime.date.today().isoformat()
+pytestmark = pytest.mark.e2e
 
 
 _DEFAULT_CSV = (
@@ -86,13 +63,13 @@ def run_publish():
 # ===================================================================
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_draft_publish(tmp_path, run_publish):
     """Draft HTML + .md should produce versioned + unversioned .html and .md."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )
@@ -123,13 +100,13 @@ def test_draft_publish(tmp_path, run_publish):
     )
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_draft_with_zip(tmp_path, run_publish):
     """Draft HTML + .md + .zip should also produce .zip copies."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )
@@ -158,13 +135,13 @@ def test_draft_with_zip(tmp_path, run_publish):
     )
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_final_publish(tmp_path, run_publish):
     """Final HTML + .md should produce versioned, unversioned, and -final copies."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0",
-        state_suffix="final",
+
         date=today,
         year=today[:4],
         include_history=False,
@@ -203,14 +180,14 @@ def test_final_publish(tmp_path, run_publish):
     )
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_unknown_state_fails(tmp_path, run_publish):
     """An unrecognisable title should cause the script to exit 1."""
-    today = _today_str()
+    today = today_str()
     # Build HTML with a title that doesn't match DRAFT/FINAL/ERRATA/IMPLEMENTORS
     html = _build_spec_html(
         title="Some Random Document With No State Marker",
-        state_suffix="unknown",
+
         date=today,
         year=today[:4],
         include_history=False,
@@ -232,13 +209,13 @@ def test_unknown_state_fails(tmp_path, run_publish):
     )
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_missing_source_fails(tmp_path, run_publish):
     """HTML only (no .md or .xml) should fail with 'requires corresponding source'."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )

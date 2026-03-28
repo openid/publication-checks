@@ -1,8 +1,6 @@
 """Tests for #76: Check sequential draft numbers."""
 
-import datetime
 import os
-import subprocess
 import sys
 
 import pytest
@@ -13,31 +11,11 @@ if _TESTS_DIR not in sys.path:
 sys.path.insert(0, os.path.join(_TESTS_DIR, ".."))
 
 from conftest import _build_spec_html  # noqa: E402
-from e2e_helpers import create_test_repo, run_python_script  # noqa: E402
+from e2e_helpers import (  # noqa: E402
+    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+)
 
 pytestmark = pytest.mark.e2e
-
-
-def _today_str():
-    return datetime.date.today().isoformat()
-
-
-def _network_available():
-    try:
-        result = subprocess.run(
-            ["curl", "-sf", "--max-time", "5", "-o", "/dev/null",
-             "https://openid.net/specs/"],
-            capture_output=True,
-        )
-        return result.returncode == 0
-    except FileNotFoundError:
-        return False
-
-
-_SKIP_NO_NETWORK = pytest.mark.skipif(
-    not _network_available(),
-    reason="openid.net unreachable",
-)
 
 
 # CSV with draft 01 already published
@@ -47,13 +25,13 @@ _CSV_WITH_DRAFT_01 = (
 )
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_draft_01_is_always_sequential(tmp_path):
     """Draft -01 (first draft) should always pass the sequential check."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )
@@ -67,13 +45,13 @@ def test_draft_01_is_always_sequential(tmp_path):
     assert "Draft numbering is sequential" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_draft_02_warns_when_01_not_on_openid_net(tmp_path):
     """Draft -02 for a test spec warns since draft -01 isn't published on openid.net."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 02",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )
@@ -91,13 +69,13 @@ def test_draft_02_warns_when_01_not_on_openid_net(tmp_path):
     assert "sequential" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_draft_03_warns_when_02_missing(tmp_path):
     """Draft -03 should warn when draft -02 is not in the spec list."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 03",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )

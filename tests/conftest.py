@@ -60,7 +60,7 @@ def _oidf_notices_text(year):
     """)
 
 
-def _build_spec_html(title, state_suffix, year="2026", date="2026-03-20",
+def _build_spec_html(title, year="2026", date="2026-03-20",
                      include_history=True, include_notices=True,
                      include_authors=True, include_all_sections=True,
                      author_format="div", intended_status=None):
@@ -157,7 +157,6 @@ def _build_spec_html(title, state_suffix, year="2026", date="2026-03-20",
 def draft_html():
     return _build_spec_html(
         title="OpenID Connect Example 1.0 - Draft 01",
-        state_suffix="draft",
         include_history=True,
     )
 
@@ -166,7 +165,6 @@ def draft_html():
 def final_html():
     return _build_spec_html(
         title="OpenID Connect Example 1.0",
-        state_suffix="final",
         include_history=False,
         intended_status="Final",
     )
@@ -176,7 +174,6 @@ def final_html():
 def errata_html():
     return _build_spec_html(
         title="OpenID Connect Example 1.0 incorporating errata set 1",
-        state_suffix="errata",
         include_history=False,
     )
 
@@ -185,7 +182,6 @@ def errata_html():
 def implementors_html():
     return _build_spec_html(
         title="OpenID Connect Example 1.0 - Implementors Draft 1",
-        state_suffix="implementors",
         include_history=True,
     )
 
@@ -194,7 +190,6 @@ def implementors_html():
 def malformed_html():
     return _build_spec_html(
         title="OpenID Connect Example 1.0 - Draft 01",
-        state_suffix="draft",
         include_history=False,
         include_notices=False,
         include_authors=False,
@@ -206,7 +201,6 @@ def malformed_html():
 def no_history_html():
     return _build_spec_html(
         title="OpenID Connect Example 1.0 - Draft 01",
-        state_suffix="draft",
         include_history=False,
     )
 
@@ -215,7 +209,6 @@ def no_history_html():
 def bad_notices_html():
     return _build_spec_html(
         title="OpenID Connect Example 1.0 - Draft 01",
-        state_suffix="draft",
         include_history=True,
         include_notices=False,
     )
@@ -225,7 +218,6 @@ def bad_notices_html():
 def table_authors_html():
     return _build_spec_html(
         title="OpenID Connect Example 1.0 - Draft 01",
-        state_suffix="draft",
         author_format="table",
     )
 

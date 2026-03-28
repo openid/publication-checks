@@ -12,9 +12,7 @@ with ``pytest.mark.e2e`` so they can be selected or deselected easily.
 
 from __future__ import annotations
 
-import datetime
 import os
-import subprocess
 import sys
 
 import pytest
@@ -25,31 +23,14 @@ if _TESTS_DIR not in sys.path:
     sys.path.insert(0, _TESTS_DIR)
 
 from conftest import _build_spec_html  # noqa: E402
-from e2e_helpers import create_test_repo, run_python_script  # noqa: E402
+from e2e_helpers import (  # noqa: E402
+    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+)
 
 # ---------------------------------------------------------------------------
 # Marker applied to every test in this module
 # ---------------------------------------------------------------------------
 pytestmark = pytest.mark.e2e
-
-
-def _network_available() -> bool:
-    """Return True if we can reach openid.net (quick check)."""
-    try:
-        result = subprocess.run(
-            ["curl", "-sf", "--max-time", "5", "-o", "/dev/null",
-             "https://openid.net/specs/"],
-            capture_output=True,
-        )
-        return result.returncode == 0
-    except FileNotFoundError:
-        return False
-
-
-_SKIP_NO_NETWORK = pytest.mark.skipif(
-    not _network_available(),
-    reason="openid.net is unreachable – network required for process.sh e2e tests",
-)
 
 
 @pytest.fixture
@@ -58,11 +39,6 @@ def run_process():
     def _run(repo_path, scripts_path):
         return run_python_script("process.py", repo_path, scripts_path)
     return _run
-
-
-def _today_str() -> str:
-    """Return today's date as YYYY-MM-DD."""
-    return datetime.date.today().isoformat()
 
 
 # ---------------------------------------------------------------------------
@@ -85,14 +61,14 @@ _DEFAULT_CSV = (
 # ===================================================================
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_valid_draft_passes(tmp_path, run_process):
     """A fully valid draft with .md source, all sections, recent date and
     history section should exit 0 and print CONGRATULATIONS."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
         include_history=True,
@@ -117,7 +93,7 @@ def test_valid_draft_passes(tmp_path, run_process):
     assert "CONGRATULATIONS" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_no_html_files_fails(tmp_path, run_process):
     """When no HTML files have changed the script should exit 1."""
     # Commit only a markdown file – no .html
@@ -134,19 +110,19 @@ def test_no_html_files_fails(tmp_path, run_process):
     assert "No HTML files have changed" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_multiple_wg_dirs_fails(tmp_path, run_process):
     """HTML files in two WG sub-directories should trigger a failure."""
-    today = _today_str()
+    today = today_str()
     html1 = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )
     html2 = _build_spec_html(
         title="OpenID FAPI Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )
@@ -166,13 +142,13 @@ def test_multiple_wg_dirs_fails(tmp_path, run_process):
     assert "More than one WG sub-directory" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_missing_source_fails(tmp_path, run_process):
     """HTML without a .md or .xml companion should fail."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )
@@ -190,15 +166,15 @@ def test_missing_source_fails(tmp_path, run_process):
     assert "Markdown or XML Source is required" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_duplicate_filename_fails(tmp_path, run_process):
     """A filename that already exists in the spec list should fail."""
-    today = _today_str()
+    today = today_str()
     # Use a filename known to exist on openid.net/specs/
     dup_name = "openid-connect-discovery-1_0-21"
     html = _build_spec_html(
         title="OpenID Connect Discovery 1.0 - Draft 21",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )
@@ -216,13 +192,13 @@ def test_duplicate_filename_fails(tmp_path, run_process):
     assert "already exists" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_draft_missing_history_fails(tmp_path, run_process):
     """A draft without a Document History section should fail."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
         include_history=False,
@@ -241,13 +217,13 @@ def test_draft_missing_history_fails(tmp_path, run_process):
     assert "does not have required history" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_final_with_history_fails(tmp_path, run_process):
     """A final spec that still has a history section should fail."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0",
-        state_suffix="final",
+
         date=today,
         year=today[:4],
         include_history=True,
@@ -267,12 +243,12 @@ def test_final_with_history_fails(tmp_path, run_process):
     assert "FINAL state but history section exists" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_stale_date_fails(tmp_path, run_process):
     """A publication date older than 10 days should fail."""
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date="2020-01-01",
         year="2020",
     )
@@ -290,13 +266,13 @@ def test_stale_date_fails(tmp_path, run_process):
     assert "more than 10 days ago" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_bad_notices_fails(tmp_path, run_process):
     """Missing / incorrect Notices section should fail."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
         include_notices=False,
@@ -315,13 +291,13 @@ def test_bad_notices_fails(tmp_path, run_process):
     assert "Problem with Notices" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_missing_structure_fails(tmp_path, run_process):
     """Omitting required structural sections should fail."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
         include_all_sections=False,

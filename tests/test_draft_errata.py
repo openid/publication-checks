@@ -22,30 +22,8 @@ if _TESTS_DIR not in sys.path:
     sys.path.insert(0, _TESTS_DIR)
 
 from conftest import _build_spec_html  # noqa: E402
-from e2e_helpers import create_test_repo, run_python_script  # noqa: E402
-
-import datetime
-
-
-def _today_str():
-    return datetime.date.today().isoformat()
-
-
-def _network_available():
-    try:
-        result = subprocess.run(
-            ["curl", "-sf", "--max-time", "5", "-o", "/dev/null",
-             "https://openid.net/specs/"],
-            capture_output=True,
-        )
-        return result.returncode == 0
-    except FileNotFoundError:
-        return False
-
-
-_SKIP_NO_NETWORK = pytest.mark.skipif(
-    not _network_available(),
-    reason="openid.net unreachable",
+from e2e_helpers import (  # noqa: E402
+    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
 )
 
 
@@ -130,14 +108,14 @@ class TestFinalExistsInCsv:
 # ===================================================================
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_draft_rejected_when_final_exists_e2e(tmp_path):
     """A plain DRAFT for openid-connect-4-identity-assurance-1_0 should be
     rejected because a -final already exists on openid.net."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect for Identity Assurance 1.0 - Draft 18",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )
@@ -156,14 +134,14 @@ def test_draft_rejected_when_final_exists_e2e(tmp_path):
     assert "final spec already exists" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_draft_errata_accepted_e2e(tmp_path):
     """A DRAFT_ERRATA for openid-connect-4-identity-assurance-1_0 should pass
     because the title correctly references errata and a final exists."""
-    today = _today_str()
+    today = today_str()
     html = _build_spec_html(
         title="OpenID Connect for Identity Assurance 1.0 incorporating errata set 1 - Draft 01",
-        state_suffix="draft_errata",
+
         date=today,
         year=today[:4],
         include_history=True,

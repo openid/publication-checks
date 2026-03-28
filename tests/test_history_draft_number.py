@@ -1,8 +1,6 @@
 """Tests for #77: History section must reference the current draft number."""
 
-import datetime
 import os
-import subprocess
 import sys
 
 import pytest
@@ -13,41 +11,21 @@ if _TESTS_DIR not in sys.path:
 sys.path.insert(0, os.path.join(_TESTS_DIR, ".."))
 
 from conftest import _build_spec_html  # noqa: E402
-from e2e_helpers import create_test_repo, run_python_script  # noqa: E402
+from e2e_helpers import (  # noqa: E402
+    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+)
 
 pytestmark = pytest.mark.e2e
 
 
-def _today_str():
-    return datetime.date.today().isoformat()
-
-
-def _network_available():
-    try:
-        result = subprocess.run(
-            ["curl", "-sf", "--max-time", "5", "-o", "/dev/null",
-             "https://openid.net/specs/"],
-            capture_output=True,
-        )
-        return result.returncode == 0
-    except FileNotFoundError:
-        return False
-
-
-_SKIP_NO_NETWORK = pytest.mark.skipif(
-    not _network_available(),
-    reason="openid.net unreachable",
-)
-
-
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_history_references_current_draft(tmp_path):
     """Draft -01 with history entry for -01 should pass."""
-    today = _today_str()
+    today = today_str()
     # _build_spec_html generates history with "-01" entry
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )
@@ -64,14 +42,14 @@ def test_history_references_current_draft(tmp_path):
     assert "History section references draft 01" in result.stdout
 
 
-@_SKIP_NO_NETWORK
+@SKIP_NO_NETWORK
 def test_history_missing_current_draft(tmp_path):
     """Draft -02 with history only containing -01 should fail."""
-    today = _today_str()
+    today = today_str()
     # _build_spec_html generates history with "-01" entry only
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 02",
-        state_suffix="draft",
+
         date=today,
         year=today[:4],
     )
