@@ -559,8 +559,7 @@ def get_spec_list_csv():
 def get_specs(directory):
     url = "https://openid.net/specs/"
     
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    os.makedirs(directory, exist_ok=True)
     
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
