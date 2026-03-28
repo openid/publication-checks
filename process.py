@@ -311,6 +311,13 @@ def main() -> int:
             else:
                 echo_error("FAIL: FINAL state but history section exists")
                 doc_fails = True
+        elif state == "IMPLEMENTORS":
+            echo_good("Document is in IMPLEMENTORS state")
+            if not has_history:
+                echo_good("PASS: Document does not have a history section")
+            else:
+                echo_error("FAIL: IMPLEMENTORS state but history section exists")
+                doc_fails = True
         elif state in ("ERRATA", "DRAFT_ERRATA"):
             echo_good(f"Document is in {state} state")
 
