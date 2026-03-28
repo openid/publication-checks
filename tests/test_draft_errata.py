@@ -169,9 +169,10 @@ def test_draft_errata_accepted_e2e(tmp_path):
 # ===================================================================
 
 
-def test_pr161_ida_spec_is_draft_errata():
-    """PR #161's IDA spec is now titled 'draft 17 incorporating errata set 1',
-    so content_state correctly detects it as DRAFT_ERRATA."""
+def test_pr161_ida_spec_is_draft_but_final_exists():
+    """PR #161's IDA spec (as originally submitted) is titled 'draft 17'
+    without errata language, so content_state detects it as DRAFT.
+    Since a final already exists, the post-final check would reject it."""
     fixture_path = os.path.join(
         os.path.dirname(__file__), "fixtures",
         "openid-connect-4-identity-assurance-1_0-17.html",
@@ -180,4 +181,4 @@ def test_pr161_ida_spec_is_draft_errata():
         content = f.read()
 
     state_result = spec_validator.content_state(content)
-    assert state_result["state"] == "DRAFT_ERRATA"
+    assert state_result["state"] == "DRAFT"

@@ -1,5 +1,5 @@
 %%%
-title = "OpenID Connect for Identity Assurance 1.0 - draft 17  incorporating errata set 1"
+title = "OpenID Connect for Identity Assurance 1.0 - draft 17"
 abbrev = "openid-connect-4-identity-assurance-1_0"
 ipr = "none"
 workgroup = "eKYC-IDA"
@@ -683,7 +683,7 @@ The eKYC and Identity Assurance Working Group maintains a wiki page [@!predefine
   </front>
 </reference>
 
-<reference anchor="verified_claims.json" target="https://openid.net/schemas/">
+<reference anchor="verified_claims.json" target="https://openid.net/wg/ekyc-ida/references/">
   <front>
     <title>JSON Schema for assertions using verified_claims</title>
     <author>
@@ -693,7 +693,7 @@ The eKYC and Identity Assurance Working Group maintains a wiki page [@!predefine
   </front>
 </reference>
 
-<reference anchor="verified_claims_request.json" target="https://openid.net/schemas/">
+<reference anchor="verified_claims_request.json" target="https://openid.net/wg/ekyc-ida/references/">
   <front>
     <title>JSON Schema for requesting verified_claims</title>
     <author>

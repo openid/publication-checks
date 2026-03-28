@@ -1,5 +1,5 @@
 %%%
-title = "OpenID Identity Assurance Schema Definition 1.0 - draft 03 incorporating errata set 1"
+title = "OpenID Identity Assurance Schema Definition 1.0 - draft 03"
 abbrev = "openid-ida-verified-claims-1_0"
 ipr = "none"
 workgroup = "eKYC-IDA"
@@ -572,12 +572,13 @@ The data structures described in this specification will contain personal inform
   </front>
 </reference>
 
-<reference anchor="verified_claims.json" target="https://openid.net/schemas">
+<reference anchor="verified_claims.json" target="https://openid.net/wg/ekyc-ida/references/">
   <front>
     <title>JSON Schema for assertions using verified_claims</title>
     <author>
         <organization>OpenID Foundation</organization>
     </author>
+   <date year="2020"/>
   </front>
 </reference>
 
