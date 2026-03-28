@@ -158,7 +158,6 @@ def main() -> int:
         html_fails = False
         md_fails = False
         xml_fails = False
-        copy_fails = False
         doc_fails = False
 
         print("-" * 114)
@@ -203,7 +202,6 @@ def main() -> int:
         # -- State-specific copying ----------------------------------------
         if state == "UNKNOWN":
             echo_error("Problem with document titles so state is UNKNOWN.  EXITING")
-            copy_fails = True
             return 1
 
         elif state == "DRAFT":
@@ -264,10 +262,10 @@ def main() -> int:
                 "FAIL: this may be due to incorrect file name format "
                 "or heading suffix issues"
             )
-            copy_fails = True
+            doc_fails = True
 
         # -- Per-file result checks ----------------------------------------
-        if copy_fails or html_fails:
+        if html_fails:
             echo_error(
                 f"FAIL: {file} either a file state error or HTML copy error occured"
             )
@@ -282,6 +280,7 @@ def main() -> int:
             doc_fails = True
 
         if doc_fails:
+            any_fails = True
             echo_error(f"FAIL: {file} did not pass all checks")
         else:
             echo_good(f"CONGRATULATIONS: {file} prepartion successful")
