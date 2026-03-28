@@ -199,6 +199,18 @@ def main() -> int:
             echo_good("Document is in DRAFT state")
             if has_history:
                 echo_good("PASS: Document has a history section")
+                # Check history references the current draft number
+                draft_num_match = re.search(r'-(\d{1,2})\.html$', base_html)
+                if draft_num_match and history_result.get("history"):
+                    draft_num = draft_num_match.group(1)
+                    history_text = " ".join(str(e) for e in history_result["history"])
+                    if f"-{draft_num}" in history_text:
+                        echo_good(f"PASS: History section references draft {draft_num}")
+                    else:
+                        echo_error(
+                            f"FAIL: History section does not reference current draft number {draft_num}"
+                        )
+                        doc_fails = True
             else:
                 echo_error("FAIL: DRAFT state but does not have required history section")
                 doc_fails = True
@@ -224,6 +236,18 @@ def main() -> int:
                 # Draft errata (pre-vote) requires history, like DRAFT
                 if has_history:
                     echo_good("PASS: Document has a history section")
+                    # Check history references the current draft number
+                    draft_num_match = re.search(r'-(\d{1,2})\.html$', base_html)
+                    if draft_num_match and history_result.get("history"):
+                        draft_num = draft_num_match.group(1)
+                        history_text = " ".join(str(e) for e in history_result["history"])
+                        if f"-{draft_num}" in history_text:
+                            echo_good(f"PASS: History section references draft {draft_num}")
+                        else:
+                            echo_error(
+                                f"FAIL: History section does not reference current draft number {draft_num}"
+                            )
+                            doc_fails = True
                 else:
                     echo_error("FAIL: DRAFT_ERRATA state but does not have required history section")
                     doc_fails = True
