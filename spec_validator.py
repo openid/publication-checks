@@ -800,7 +800,12 @@ def content_filename_match(content, filename, debug=False):
                 content_number = match.group(1)
     
     # Check for match
-    if filename_type == content_type:
+    # IMPLEMENTERS filenames (-ID2.html) keep the original draft title,
+    # so accept IMPLEMENTERS filename with DRAFT content (numbers will differ
+    # since ID number and draft number are independent).
+    if filename_type == 'IMPLEMENTERS' and content_type == 'DRAFT':
+        result["match"] = True
+    elif filename_type == content_type:
         if filename_type == 'FINAL':
             result["match"] = True
         elif filename_type == 'CURRENT':
