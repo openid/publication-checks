@@ -314,8 +314,8 @@ def main() -> int:
             # Check that no final already exists for this spec
             if final_exists_in_csv(unversioned_name, csv_path):
                 echo_error(
-                    "FAIL: A final spec already exists. Post-final drafts "
-                    "must include 'incorporating errata set N' in the title"
+                    "FAIL: A final spec already exists. Post-final drafts must be titled like "
+                    "'Spec Name 1.0 - Draft NN incorporating errata set N'"
                 )
                 doc_fails = True
         elif state == "FINAL":
