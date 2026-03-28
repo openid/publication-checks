@@ -18,9 +18,10 @@ class TestFilenameDraft:
         result = spec_validator.filename_state("openid-connect-core-1_0-99.html")
         assert result["state"] == "DRAFT"
 
-    def test_single_digit_draft(self):
+    def test_single_digit_draft_rejected(self):
+        """Single-digit draft numbers must be zero-padded (e.g., -05 not -5)."""
         result = spec_validator.filename_state("openid-connect-core-1_0-5.html")
-        assert result["state"] == "DRAFT"
+        assert result["state"] == "UNKNOWN"
 
     def test_draft_different_spec(self):
         result = spec_validator.filename_state("openid-federation-1_0-03.html")

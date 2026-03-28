@@ -34,7 +34,7 @@ EXIT_DRAFT_FOUND_IN_CSV = 140
 
 PATTERNS = {
     'CURRENT': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)\.html$',     
-    'DRAFT': r'^[\w-]+-\d+_\d+-\d{1,2}\.html$',
+    'DRAFT': r'^[\w-]+-\d+_\d+-\d{2}\.html$',
     'IMPLEMENTORS': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)-ID(\d)\.html$',
     'ERRATA': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)-errata(\d+)\.html$',
     'FINAL': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)-final\.html$',
