@@ -369,7 +369,16 @@ def main() -> int:
         # -- Content-filename match ----------------------------------------
         match_result = spec_validator.content_filename_match(content, base_html, debug)
         if not match_result["match"]:
-            echo_error(f"FAIL: Content state or version number does not match filename in {file}.")
+            # Give a specific hint when a -final filename lacks Status: Final in header
+            filename_state_result = spec_validator.filename_state(base_html)
+            if filename_state_result["state"] == "FINAL" and state != "FINAL":
+                echo_error(
+                    f"FAIL: Filename indicates Final but document header does not contain "
+                    f"'Status: Final'. Add <dd class=\"intended-status\">Final</dd> or "
+                    f"<td class=\"header\">Final</td> to the document header in {file}."
+                )
+            else:
+                echo_error(f"FAIL: Content state or version number does not match filename in {file}.")
             doc_fails = True
         else:
             echo_good(f"PASS: Content matches filename in {file}")
