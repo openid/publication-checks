@@ -274,7 +274,7 @@ def main() -> int:
         # -- Per-file result checks ----------------------------------------
         if html_fails:
             echo_error(
-                f"FAIL: {file} either a file state error or HTML copy error occured"
+                f"FAIL: {file} either a file state error or HTML copy error occurred"
             )
             any_fails = True
             doc_fails = True
@@ -290,7 +290,7 @@ def main() -> int:
             any_fails = True
             echo_error(f"FAIL: {file} did not pass all checks")
         else:
-            echo_good(f"CONGRATULATIONS: {file} prepartion successful")
+            echo_good(f"CONGRATULATIONS: {file} preparation successful")
 
         print("-" * 114)
 
