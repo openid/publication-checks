@@ -139,6 +139,7 @@ def main() -> int:
         return 1
 
     # ---- Check only one WG sub-directory --------------------------------
+    print(f"Sub-Directories: {len(set(subdirectories))}")
     wg_fails = False
     unique_dirs = sorted(set(subdirectories))
     if len(unique_dirs) != 1:
@@ -192,6 +193,7 @@ def main() -> int:
         stem = os.path.splitext(file)[0]  # e.g. connect/openid-connect-test-1_0-01
         draft_num_match = re.search(r'-(\d{1,2})\.html$', base_html)
 
+        print("Checking source files")
         # -- Source-file checks -------------------------------------------
         zip_path = os.path.join("..", f"{stem}.zip")
         md_path = os.path.join("..", f"{stem}.md")
@@ -232,6 +234,7 @@ def main() -> int:
             )
             doc_fails = True
 
+        print("Checking companion files")
         # -- Check companion files match previous version -------------------
         if draft_num_match:
             draft_num_pre = int(draft_num_match.group(1))
@@ -265,6 +268,7 @@ def main() -> int:
                 except FileNotFoundError:
                     pass
 
+        print("Checking for duplicate filename")
         # -- Duplicate check (check-draft) --------------------------------
         exit_code = spec_validator.check_draft_in_csv(base_html, csv_path)
         if exit_code != spec_validator.EXIT_SUCCESS:
@@ -285,10 +289,12 @@ def main() -> int:
             print("-" * 114)
             continue
 
+        print("Checking document history")
         # -- History section -----------------------------------------------
         history_result = spec_validator.content_history(content, debug)
         has_history = history_result["history_present"]
 
+        print("Checking document state")
         # -- Document state ------------------------------------------------
         state_result = spec_validator.content_state(content, debug)
         state = state_result["state"]
@@ -313,6 +319,7 @@ def main() -> int:
             r'(?:-\d{1,2}|-final|-errata\d+|-ID\d+)$', '', versioned_name,
         )
 
+        print("Checking state and history consistency")
         # -- State / history consistency -----------------------------------
         if state == "UNKNOWN":
             echo_error("FAIL: Problem with document titles so state is UNKNOWN")
@@ -399,6 +406,7 @@ def main() -> int:
             )
             doc_fails = True
 
+        print("Checking for draft disclaimer")
         # -- Draft disclaimer must not appear in FINAL or ERRATA -------------
         if state in ("FINAL", "ERRATA"):
             if "This document is not an OIDF International Standard" in content:
@@ -410,6 +418,7 @@ def main() -> int:
             else:
                 echo_good(f"PASS: No draft disclaimer in {file}")
 
+        print("Checking for IETF IPR boilerplate")
         # -- IETF IPR boilerplate must not be present ---
         ietf_ipr_strings = [
             "IETF Trust",
@@ -434,6 +443,7 @@ def main() -> int:
         else:
             echo_good(f"PASS: No IETF Trust IPR boilerplate in {file}")
 
+        print("Checking title consistency")
         # -- Title consistency (<title> vs <h1>) ----------------------------
         title_result = spec_validator.content_title(content, debug)
         if not title_result["match"]:
@@ -442,6 +452,7 @@ def main() -> int:
         else:
             echo_good(f"PASS: Title tag matches H1 heading in {file}")
 
+        print("Checking filename matches content")
         # -- Content-filename match ----------------------------------------
         # Skip for DRAFT_ERRATA: filename is DRAFT-style (-01.html) but content
         # has errata keywords, so content_filename_match can't reconcile them.
@@ -463,6 +474,7 @@ def main() -> int:
         else:
             echo_good(f"PASS: Content matches filename in {file}")
 
+        print("Checking authors")
         # -- Authors -------------------------------------------------------
         authors_result = spec_validator.content_authors(content, debug)
         if not authors_result["authors"]:
@@ -471,6 +483,7 @@ def main() -> int:
         else:
             echo_good(f"PASS: Authors section in {file} is good")
 
+        print("Checking notices")
         # -- Notices -------------------------------------------------------
         notices_result = spec_validator.content_notices(content, debug)
         notices_ok = (
@@ -483,6 +496,7 @@ def main() -> int:
         else:
             echo_good(f"PASS: Notices section in {file} is good")
 
+        print("Checking references")
         # -- References (with URL check) -----------------------------------
         ref_result = spec_validator.content_ref(content, check_url=True, debug=debug)
         if ref_result.get("all_accessible") is False:
@@ -491,6 +505,7 @@ def main() -> int:
         else:
             echo_good(f"PASS: References in {file} is good")
 
+        print("Checking reference URLs")
         # -- OpenID references should use canonical URLs ---
         non_canonical_patterns = [r'openid\.github\.io', r'openid\.bitbucket\.io']
         non_canonical_urls = []
@@ -508,6 +523,7 @@ def main() -> int:
         else:
             echo_good(f"PASS: No non-canonical OpenID reference URLs in {file}")
 
+        print("Checking document structure")
         # -- Structure -----------------------------------------------------
         struct_result = spec_validator.content_struct(content, debug)
         required_sections = [
@@ -529,6 +545,7 @@ def main() -> int:
                 "Acknowledgements and Security Considerations sections are all present"
             )
 
+        print("Checking publication date")
         # -- Publication date ----------------------------------------------
         today = datetime.date.today().isoformat()
         print(f"Today is: {today}")
