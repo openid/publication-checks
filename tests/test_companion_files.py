@@ -87,7 +87,7 @@ def test_md_without_includes_no_zip_warns(tmp_path):
 
     assert result.returncode == 0
     assert "WARNING" in result.stdout
-    assert ".zip not present" in result.stdout
+    assert "No .zip file for" in result.stdout
 
 
 @SKIP_NO_NETWORK

@@ -96,7 +96,7 @@ def main() -> int:
     else:
         csv_data = spec_validator.get_spec_list_csv()
         if csv_data is None:
-            echo_error("OpenID Specs not available. Exiting script.")
+            echo_error("FAIL: Could not fetch spec list from openid.net. Check network connectivity and retry.")
             return 1
         with open(csv_path, "w", newline="") as f:
             f.write(csv_data)
@@ -209,11 +209,11 @@ def main() -> int:
                         )
                         doc_fails = True
                     else:
-                        echo_warn(f"WARNING: zipped content called {stem}.zip not present.")
+                        echo_warn(f"WARNING: No .zip file for {stem}. A .zip is required if the source has multiple files (e.g., markdown with external includes).")
                 except (FileNotFoundError, UnicodeDecodeError):
-                    echo_warn(f"WARNING: zipped content called {stem}.zip not present.")
+                    echo_warn(f"WARNING: No .zip file for {stem}. A .zip is required if the source has multiple files (e.g., markdown with external includes).")
             else:
-                echo_warn(f"WARNING: zipped content called {stem}.zip not present.")
+                echo_warn(f"WARNING: No .zip file for {stem}. A .zip is required if the source has multiple files (e.g., markdown with external includes).")
 
         if not os.path.isfile(md_path) and not os.path.isfile(xml_path):
             echo_error(
@@ -270,7 +270,7 @@ def main() -> int:
             with open(file_path, "r", encoding="utf-8") as fh:
                 content = fh.read()
         except (FileNotFoundError, PermissionError) as exc:
-            echo_error(f"FAIL: Cannot read {file}: {exc}")
+            echo_error(f"FAIL: Cannot read {file}: {exc}. Check the file exists and has correct permissions.")
             doc_fails = True
             any_fails = True
             print("-" * 114)
@@ -388,10 +388,7 @@ def main() -> int:
                 echo_error("FAIL: A predecessor final spec does not exist")
                 doc_fails = True
         else:
-            echo_error(f"FAIL: Unexpected document state: {state}")
-            echo_error(
-                "FAIL: this may be due to incorrect file name format or heading suffix issues"
-            )
+            echo_error(f"FAIL: Unexpected document state '{state}'. The title should contain 'Draft NN', 'incorporating errata set N', or the header should indicate 'Status: Final' - see ERROR-MODES.md.")
             doc_fails = True
 
         print("Checking for draft disclaimer")
@@ -451,7 +448,7 @@ def main() -> int:
                     f"<td class=\"header\">Final</td> to the document header in {file}."
                 )
             else:
-                echo_error(f"FAIL: Content state or version number does not match filename in {file}.")
+                echo_error(f"FAIL: Content state or version number does not match filename in {file}. For example, spec-1_0-05.html should have 'Draft 05' in the title.")
             doc_fails = True
         else:
             echo_good(f"PASS: Content matches filename in {file}")
@@ -460,7 +457,7 @@ def main() -> int:
         # -- Authors -------------------------------------------------------
         authors_result = spec_validator.content_authors(content, debug)
         if not authors_result["authors"]:
-            echo_error(f"FAIL: Problem with authors in {file}.")
+            echo_error(f"FAIL: Problem with authors in {file}. The HTML must have an authors section with at least one name and affiliation.")
             doc_fails = True
         else:
             echo_good(f"PASS: Authors section in {file} is good")
@@ -473,7 +470,7 @@ def main() -> int:
             and notices_result["license_text_present"]
         )
         if not notices_ok:
-            echo_error(f"FAIL: Problem with Notices section in {file}.")
+            echo_error(f"FAIL: Problem with Notices section in {file}. The Notices appendix must contain the OIDF copyright and license text.")
             doc_fails = True
         else:
             echo_good(f"PASS: Notices section in {file} is good")
@@ -482,7 +479,7 @@ def main() -> int:
         # -- References (with URL check) -----------------------------------
         ref_result = spec_validator.content_ref(content, check_url=True, debug=debug)
         if ref_result.get("all_accessible") is False:
-            echo_error(f"FAIL: Problem with References in {file}.")
+            echo_error(f"FAIL: Problem with References in {file}. One or more referenced URLs are not accessible - see the log above for details.")
             doc_fails = True
         else:
             echo_good(f"PASS: References in {file} is good")
@@ -547,7 +544,7 @@ def main() -> int:
             else:
                 echo_good(f"PASS: Publication date of {file} is good")
         else:
-            echo_error(f"FAIL: Could not determine publication date in {file}.")
+            echo_error(f"FAIL: Could not determine publication date in {file}. Ensure the HTML contains a published date element.")
             doc_fails = True
 
         # -- Per-file summary ----------------------------------------------
