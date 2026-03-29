@@ -558,17 +558,20 @@ def main() -> int:
             if k != "debug":
                 print(f"  {k}: {v}")
 
-        days_old = 9999
+        days_old = None
         if "comparison" in date_result:
-            days_old = date_result["comparison"].get("days_difference", 9999)
+            days_old = date_result["comparison"].get("days_difference")
 
-        print(f"{days_old} days since publication")
-
-        if days_old > 10:
-            echo_error(f"FAIL: Publication date is more than 10 days ago in {file}.")
-            doc_fails = True
+        if days_old is not None:
+            print(f"{days_old} days since publication")
+            if days_old > 10:
+                echo_error(f"FAIL: Publication date is more than 10 days ago in {file}.")
+                doc_fails = True
+            else:
+                echo_good(f"PASS: Publication date of {file} is good")
         else:
-            echo_good(f"PASS: Publication date of {file} is good")
+            echo_error(f"FAIL: Could not determine publication date in {file}.")
+            doc_fails = True
 
         # -- Per-file summary ----------------------------------------------
         if doc_fails:

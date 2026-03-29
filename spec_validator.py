@@ -861,7 +861,8 @@ def process_draft_file(filename, debug=False):
                 print(f"Debug: Final name is {final_name}")
             return f"Published: {published_name}\nFinal: {final_name}", EXIT_SUCCESS
         elif state == "ERRATA":
-            errata_number = re.search(PATTERNS['ERRATA_CONTENT'], content).group(1) or re.search(PATTERNS['ERRATA_CONTENT'], content).group(2)
+            m = re.search(PATTERNS['ERRATA_CONTENT'], content)
+            errata_number = m.group(1) or m.group(2)
             errata_name = f"{base_name}-errata{errata_number}.html"
             if debug:
                 print(f"Debug: Errata name is {errata_name}")

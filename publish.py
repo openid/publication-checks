@@ -130,13 +130,6 @@ def main() -> int:
 
     changed_files = [f for f in all_changed if f.endswith(".html")]
 
-    # Write changed HTML filenames to delete_files.txt
-    with open("delete_files.txt", "w") as df:
-        df.write(" ".join(changed_files) + "\n" if changed_files else "\n")
-
-    # Export CHANGEDFILES env var (available to child processes / workflow)
-    os.environ["CHANGEDFILES"] = " ".join(changed_files)
-
     print(os.getcwd())
     print(f"Number of new files detected: {CYAN}{len(changed_files)}{NC}")
 
@@ -196,12 +189,9 @@ def main() -> int:
         if debug:
             print(versioned_name)
 
-        if versioned_name.endswith("-final"):
-            unversioned_name = versioned_name[:-6]
-        elif re.search(r'-ID\d$', versioned_name):
-            unversioned_name = re.sub(r'-ID\d$', '', versioned_name)
-        else:
-            unversioned_name = re.sub(r'-\d{1,2}$', '', versioned_name)
+        unversioned_name = re.sub(
+            r'(?:-\d{1,2}|-final|-errata\d+|-ID\d+)$', '', versioned_name,
+        )
 
         if debug:
             print(unversioned_name)
@@ -231,7 +221,6 @@ def main() -> int:
             )
             html_fails, md_fails, xml_fails = _check_copy_results(
                 versioned_name, unversioned_name, to_publish,
-                state_suffix="-final",
             )
 
         elif state == "IMPLEMENTERS":
@@ -272,7 +261,6 @@ def main() -> int:
             )
             html_fails, md_fails, xml_fails = _check_copy_results(
                 versioned_name, unversioned_name, to_publish,
-                state_suffix=errata_suffix,
             )
 
         else:
@@ -497,8 +485,6 @@ def _check_copy_results(
     versioned_name: str,
     unversioned_name: str,
     to_publish: str,
-    *,
-    state_suffix: str | None = None,
 ) -> tuple[bool, bool, bool]:
     """Check which files were actually created and return failure flags.
 
