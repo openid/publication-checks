@@ -531,11 +531,15 @@ def main() -> int:
         )
         if not struct_ok:
             missing = [s for s in required_sections if not struct_result["structure"].get(s)]
+            found = [s for s in required_sections if struct_result["structure"].get(s)]
             echo_error(f"FAIL: Problem with structure in {file}. Missing sections: {', '.join(missing)}")
-            headings = re.findall(r'<h[23][^>]*>(.*?)</h[23]>', content[:5000], re.DOTALL | re.IGNORECASE)
-            if headings:
-                clean_headings = [re.sub(r'<[^>]+>', '', h).strip()[:60] for h in headings[:10]]
-                echo_info(f"  Document headings found: {', '.join(clean_headings)}")
+            if found:
+                echo_info(f"  Sections found: {', '.join(found)}")
+            # Show the regex pattern used for each missing section so users
+            # can see exactly what markup the tool is looking for
+            for section in missing:
+                pattern = spec_validator.PATTERNS.get(section, "?")
+                echo_info(f"  Pattern for {section}: {pattern}")
             doc_fails = True
         else:
             echo_good(f"PASS: Structure of {file} is good")
