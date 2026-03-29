@@ -16,7 +16,7 @@ Validation tools for the OpenID Foundation specification publication pipeline.
 | FINAL | Status header: Final | No | `spec-1_0-final.html` |
 | ERRATA | "incorporating errata set N" | No | `spec-1_0-errata1.html` |
 | DRAFT_ERRATA | errata + draft in title | Yes | `spec-1_0-01.html` |
-| IMPLEMENTERS | "Implementers Draft N" | No | `spec-1_0-ID1.html` |
+| IMPLEMENTERS | "Spec 1.0 - Draft NN" (same as DRAFT) | No | `spec-1_0-ID1.html` |
 
 Draft numbers start at -00 and must be zero-padded (two digits).
 
@@ -68,6 +68,9 @@ When adding a new check: if it examines content → add to spec_validator. If it
 - No IETF Trust IPR boilerplate (fail for Final/Errata, warn for drafts)
 - No draft disclaimer in Final/Errata specs
 - References use canonical openid.net/specs/ URLs (warning)
+- WG directory is a recognised one (checked against origin/main)
+
+On failure, process.py prints diagnostic details (in cyan) showing what was found vs expected - title/h1 values, detected states, document headings, etc. These appear in the full log but not in the PR comment summary.
 
 ## OIDF Publication Rules
 
