@@ -311,6 +311,16 @@ def main() -> int:
         # -- State / history consistency -----------------------------------
         if state == "UNKNOWN":
             echo_error("FAIL: Problem with document titles so state is UNKNOWN")
+            # Show what was found to help diagnose
+            title_diag = spec_validator.content_title(content)
+            if title_diag["title_tag"]:
+                echo_info(f"  Found <title>: {title_diag['title_tag'][:100]}")
+            else:
+                echo_info(f"  No <title> tag found")
+            if title_diag["h1_title"]:
+                echo_info(f"  Found <h1>: {title_diag['h1_title'][:100]}")
+            else:
+                echo_info(f"  No <h1 id=\"title\"> tag found")
             doc_fails = True
         elif state == "DRAFT":
             echo_good("Document is in DRAFT state")
@@ -427,6 +437,8 @@ def main() -> int:
         title_result = spec_validator.content_title(content, debug)
         if not title_result["match"]:
             echo_error(f"FAIL: Title tag does not match H1 heading in {file}.")
+            echo_info(f"  <title>: {title_result['title_tag'][:100] if title_result['title_tag'] else 'not found'}")
+            echo_info(f"  <h1>: {title_result['h1_title'][:100] if title_result['h1_title'] else 'not found'}")
             doc_fails = True
         else:
             echo_good(f"PASS: Title tag matches H1 heading in {file}")
@@ -438,26 +450,33 @@ def main() -> int:
         # content_state() already validated the DRAFT_ERRATA combination.
         if state == "DRAFT_ERRATA":
             echo_good(f"PASS: Content matches filename in {file} (DRAFT_ERRATA)")
-        elif not spec_validator.content_filename_match(content, base_html, debug)["match"]:
-            # Give a specific hint when a -final filename lacks Status: Final in header
-            filename_state_result = spec_validator.filename_state(base_html)
-            if filename_state_result["state"] == "FINAL" and state != "FINAL":
-                echo_error(
-                    f"FAIL: Filename indicates Final but document header does not contain "
-                    f"'Status: Final'. Add <dd class=\"intended-status\">Final</dd> or "
-                    f"<td class=\"header\">Final</td> to the document header in {file}."
-                )
-            else:
-                echo_error(f"FAIL: Content state or version number does not match filename in {file}. For example, spec-1_0-05.html should have 'Draft 05' in the title.")
-            doc_fails = True
         else:
-            echo_good(f"PASS: Content matches filename in {file}")
+            match_result = spec_validator.content_filename_match(content, base_html, debug=True)
+            if not match_result["match"]:
+                # Give a specific hint when a -final filename lacks Status: Final in header
+                filename_state_result = spec_validator.filename_state(base_html)
+                if filename_state_result["state"] == "FINAL" and state != "FINAL":
+                    echo_error(
+                        f"FAIL: Filename indicates Final but document header does not contain "
+                        f"'Status: Final'. Add <dd class=\"intended-status\">Final</dd> or "
+                        f"<td class=\"header\">Final</td> to the document header in {file}."
+                    )
+                else:
+                    echo_error(f"FAIL: Content state or version number does not match filename in {file}. For example, spec-1_0-05.html should have 'Draft 05' in the title.")
+                if "debug" in match_result:
+                    d = match_result["debug"]
+                    echo_info(f"  Filename '{base_html}' detected as: {d.get('Filename Type', '?')} (number: {d.get('Filename Number', '?')})")
+                    echo_info(f"  Content detected as: {d.get('Content Type', '?')} (number: {d.get('Content Number', '?')})")
+                doc_fails = True
+            else:
+                echo_good(f"PASS: Content matches filename in {file}")
 
         print("Checking authors")
         # -- Authors -------------------------------------------------------
         authors_result = spec_validator.content_authors(content, debug)
         if not authors_result["authors"]:
             echo_error(f"FAIL: Problem with authors in {file}. The HTML must have an authors section with at least one name and affiliation.")
+            echo_info("  Looked for <dd class=\"authors\"> (div format) and <table> (table format)")
             doc_fails = True
         else:
             echo_good(f"PASS: Authors section in {file} is good")
@@ -471,6 +490,14 @@ def main() -> int:
         )
         if not notices_ok:
             echo_error(f"FAIL: Problem with Notices section in {file}. The Notices appendix must contain the OIDF copyright and license text.")
+            if not notices_result["notices"]:
+                echo_info("  Notices section heading not found in the document")
+            if not notices_result["license_text_present"]:
+                echo_info("  OIDF license text not found or incomplete")
+            if notices_result["copyright_year"]:
+                echo_info(f"  Copyright year found: {notices_result['copyright_year']}")
+            if notices_result["published_year"]:
+                echo_info(f"  Published year found: {notices_result['published_year']}")
             doc_fails = True
         else:
             echo_good(f"PASS: Notices section in {file} is good")
@@ -510,6 +537,10 @@ def main() -> int:
         if not struct_ok:
             missing = [s for s in required_sections if not struct_result["structure"].get(s)]
             echo_error(f"FAIL: Problem with structure in {file}. Missing sections: {', '.join(missing)}")
+            headings = re.findall(r'<h[23][^>]*>(.*?)</h[23]>', content[:5000], re.DOTALL | re.IGNORECASE)
+            if headings:
+                clean_headings = [re.sub(r'<[^>]+>', '', h).strip()[:60] for h in headings[:10]]
+                echo_info(f"  Document headings found: {', '.join(clean_headings)}")
             doc_fails = True
         else:
             echo_good(f"PASS: Structure of {file} is good")
@@ -540,6 +571,8 @@ def main() -> int:
             print(f"{days_old} days since publication")
             if days_old > 10:
                 echo_error(f"FAIL: Publication date is more than 10 days ago in {file}.")
+                echo_info(f"  Publication date found: {date_result.get('date', 'none')}")
+                echo_info(f"  Compared against: {today}")
                 doc_fails = True
             else:
                 echo_good(f"PASS: Publication date of {file} is good")
