@@ -467,3 +467,12 @@ def test_errata_creates_unversioned_copy(tmp_path, run_publish):
     assert "openid-connect-test-1_0.html" in published, (
         f"Unversioned HTML missing. Got: {sorted(published)}"
     )
+    # Companion files should also get errata suffix, not -final
+    errata_mds = [f for f in published if "-errata" in f and f.endswith(".md")]
+    assert len(errata_mds) >= 1, (
+        f"Expected -errata# .md file. Got: {sorted(published)}"
+    )
+    final_mds = [f for f in published if f.endswith("-final.md")]
+    assert len(final_mds) == 0, (
+        f"Bug: errata .md got -final suffix. Got: {sorted(published)}"
+    )

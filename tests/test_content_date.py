@@ -59,6 +59,12 @@ class TestContentDateExtraction:
         result, _ = spec_validator.content_date(html)
         assert result["date"] == "Date not found"
 
+    def test_missing_date_has_no_comparison(self):
+        """When no date exists and compare_date is given, 'comparison' key is absent."""
+        html = "<html><head><title>X</title></head><body><h1>X</h1></body></html>"
+        result, _ = spec_validator.content_date(html, compare_date="2026-03-29")
+        assert "comparison" not in result
+
 
 class TestContentDateComparison:
     """Test compare_date functionality."""

@@ -289,3 +289,4 @@ def test_unknown_state_through_process(tmp_path, run_process):
         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
     assert "Problem with document titles so state is UNKNOWN" in result.stdout
+
