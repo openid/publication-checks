@@ -198,20 +198,20 @@ def main() -> int:
 
         if not os.path.isfile(zip_path):
             # If md source exists and references external files, zip is required
+            has_includes = False
             if os.path.isfile(md_path):
                 try:
                     with open(md_path, "r", encoding="utf-8") as mdf:
                         md_content = mdf.read()
-                    if spec_validator.check_md_includes(md_content):
-                        echo_error(
-                            f"FAIL: {stem}.md references external files but no .zip archive "
-                            f"is provided. A .zip containing all source files is required."
-                        )
-                        doc_fails = True
-                    else:
-                        echo_warn(f"WARNING: No .zip file for {stem}. A .zip is required if the source has multiple files (e.g., markdown with external includes).")
+                    has_includes = spec_validator.check_md_includes(md_content)
                 except (FileNotFoundError, UnicodeDecodeError):
-                    echo_warn(f"WARNING: No .zip file for {stem}. A .zip is required if the source has multiple files (e.g., markdown with external includes).")
+                    pass
+            if has_includes:
+                echo_error(
+                    f"FAIL: {stem}.md references external files but no .zip archive "
+                    f"is provided. A .zip containing all source files is required."
+                )
+                doc_fails = True
             else:
                 echo_warn(f"WARNING: No .zip file for {stem}. A .zip is required if the source has multiple files (e.g., markdown with external includes).")
 
@@ -310,17 +310,11 @@ def main() -> int:
         print("Checking state and history consistency")
         # -- State / history consistency -----------------------------------
         if state == "UNKNOWN":
-            echo_error("FAIL: Problem with document titles so state is UNKNOWN")
+            echo_error(f"FAIL: Problem with document titles in {file} so state is UNKNOWN")
             # Show what was found to help diagnose
             title_diag = spec_validator.content_title(content)
-            if title_diag["title_tag"]:
-                echo_info(f"  Found <title>: {title_diag['title_tag'][:100]}")
-            else:
-                echo_info(f"  No <title> tag found")
-            if title_diag["h1_title"]:
-                echo_info(f"  Found <h1>: {title_diag['h1_title'][:100]}")
-            else:
-                echo_info(f"  No <h1 id=\"title\"> tag found")
+            echo_info(f"  <title>: {title_diag['title_tag'][:100] if title_diag['title_tag'] else 'not found'}")
+            echo_info(f"  <h1>: {title_diag['h1_title'][:100] if title_diag['h1_title'] else 'not found'}")
             doc_fails = True
         elif state == "DRAFT":
             echo_good("Document is in DRAFT state")
@@ -451,7 +445,7 @@ def main() -> int:
         if state == "DRAFT_ERRATA":
             echo_good(f"PASS: Content matches filename in {file} (DRAFT_ERRATA)")
         else:
-            match_result = spec_validator.content_filename_match(content, base_html, debug=True)
+            match_result = spec_validator.content_filename_match(content, base_html, debug)
             if not match_result["match"]:
                 # Give a specific hint when a -final filename lacks Status: Final in header
                 filename_state_result = spec_validator.filename_state(base_html)
@@ -463,10 +457,11 @@ def main() -> int:
                     )
                 else:
                     echo_error(f"FAIL: Content state or version number does not match filename in {file}. For example, spec-1_0-05.html should have 'Draft 05' in the title.")
-                if "debug" in match_result:
-                    d = match_result["debug"]
-                    echo_info(f"  Filename '{base_html}' detected as: {d.get('Filename Type', '?')} (number: {d.get('Filename Number', '?')})")
-                    echo_info(f"  Content detected as: {d.get('Content Type', '?')} (number: {d.get('Content Number', '?')})")
+                # Always show diagnostics on failure
+                diag = spec_validator.content_filename_match(content, base_html, debug=True)
+                d = diag.get("debug", {})
+                echo_info(f"  Filename '{base_html}' detected as: {d.get('Filename Type', '?')} (number: {d.get('Filename Number', '?')})")
+                echo_info(f"  Content detected as: {d.get('Content Type', '?')} (number: {d.get('Content Number', '?')})")
                 doc_fails = True
             else:
                 echo_good(f"PASS: Content matches filename in {file}")

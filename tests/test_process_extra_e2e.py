@@ -288,5 +288,6 @@ def test_unknown_state_through_process(tmp_path, run_process):
         f"Expected exit 1 but got {result.returncode}.\n"
         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
-    assert "Problem with document titles so state is UNKNOWN" in result.stdout
+    assert "Problem with document titles" in result.stdout
+    assert "state is UNKNOWN" in result.stdout
 
