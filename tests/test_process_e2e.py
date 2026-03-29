@@ -25,6 +25,7 @@ if _TESTS_DIR not in sys.path:
 from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import (  # noqa: E402
     create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+    assert_no_unexpected_fails,
 )
 
 # ---------------------------------------------------------------------------
@@ -90,6 +91,7 @@ def test_valid_draft_passes(tmp_path, run_process):
         f"Expected exit 0 but got {result.returncode}.\n"
         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
+    assert_no_unexpected_fails(result)
     assert "CONGRATULATIONS" in result.stdout
 
 

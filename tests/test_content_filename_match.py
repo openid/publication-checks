@@ -76,6 +76,39 @@ class TestVersionNumberMismatch:
         assert result["match"] is False
 
 
+class TestImplementersFilenameMatch:
+    """IMPLEMENTERS filename with DRAFT content should match.
+
+    Implementers Drafts are published by copying draft files with -IDN
+    filenames. The title keeps the original 'Draft NN' wording.
+    """
+
+    def test_id_filename_with_draft_content(self):
+        content = _build_content("OpenID Connect Example 1.0 - draft 02")
+        result = spec_validator.content_filename_match(
+            content, "openid-connect-example-1_0-ID1.html"
+        )
+        assert result["match"] is True
+
+    def test_id_filename_with_different_draft_number(self):
+        """ID number and draft number are independent - should still match."""
+        content = _build_content("OpenID Connect Example 1.0 - Draft 06")
+        result = spec_validator.content_filename_match(
+            content, "openid-connect-example-1_0-ID2.html"
+        )
+        assert result["match"] is True
+
+    def test_id_filename_with_final_content_no_match(self):
+        """IMPLEMENTERS filename with FINAL content should NOT match."""
+        content = _build_content(
+            "OpenID Connect Example 1.0", intended_status="Final"
+        )
+        result = spec_validator.content_filename_match(
+            content, "openid-connect-example-1_0-ID1.html"
+        )
+        assert result["match"] is False
+
+
 class TestErrataFilenameMatch:
     """ERRATA filename paired with ERRATA content should match."""
 

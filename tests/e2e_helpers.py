@@ -24,8 +24,10 @@ from __future__ import annotations
 
 import datetime
 import os
+import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -67,9 +69,6 @@ _SCRIPT_FILES = [
     "requirements.txt",
 ]
 
-# Optional files that are copied only if they already exist.
-_OPTIONAL_SCRIPT_FILES = []
-
 
 def _ensure_python_symlink(directory: Path) -> None:
     """Create a ``python`` symlink in *directory* pointing at ``python3``.
@@ -77,11 +76,9 @@ def _ensure_python_symlink(directory: Path) -> None:
     The shell scripts call ``python cli-tool.py``.  On systems where only
     ``python3`` is on PATH this symlink ensures the command resolves.
     """
-    import sys as _sys
-
     python_link = directory / "python"
     if not python_link.exists():
-        python3 = shutil.which("python3") or _sys.executable
+        python3 = shutil.which("python3") or sys.executable
         python_link.symlink_to(python3)
 
 
@@ -119,11 +116,6 @@ def create_test_repo(
         if src.exists():
             shutil.copy2(src, scripts_path / fname)
 
-    for fname in _OPTIONAL_SCRIPT_FILES:
-        src = REPO_ROOT / fname
-        if src.exists():
-            shutil.copy2(src, scripts_path / fname)
-
     # --- Ensure ``python`` is available in scripts_path --------------------
     # The shell scripts invoke ``python cli-tool.py`` but many systems only
     # ship ``python3``.  Create a symlink so bash can find it.
@@ -146,10 +138,21 @@ def create_test_repo(
     _git("config", "user.email", "test@example.com")
     _git("config", "user.name", "Test User")
 
-    # Initial commit on main (needed so origin/main ref exists)
+    # Initial commit on main with WG directories (needed so origin/main
+    # ref exists and so process.py can discover valid WG directories).
     readme = repo_path / "README.md"
     readme.write_text("# Test publication repo\n")
     _git("add", "README.md")
+
+    # Create WG directories from the spec_files paths so process.py
+    # recognises them when checking origin/main.
+    wg_dirs = {Path(p).parts[0] for p in spec_files if "/" in p}
+    for wg_dir in wg_dirs:
+        gitkeep = repo_path / wg_dir / ".gitkeep"
+        gitkeep.parent.mkdir(parents=True, exist_ok=True)
+        gitkeep.write_text("")
+        _git("add", str(Path(wg_dir) / ".gitkeep"))
+
     _git("commit", "-m", "Initial commit")
 
     # Create a local branch named ``origin/main`` that points at main.
@@ -206,6 +209,15 @@ def run_shell_script(
     )
 
 
+def assert_no_unexpected_fails(result):
+    """Assert that a script's output contains no FAIL: lines."""
+    clean = re.sub(r'\x1b\[[0-9;]*m', '', result.stdout)
+    fail_lines = [line.strip() for line in clean.splitlines() if line.strip().startswith("FAIL:")]
+    assert not fail_lines, (
+        f"Unexpected failures:\n" + "\n".join(f"  {f}" for f in fail_lines)
+    )
+
+
 def run_python_script(
     script_name: str,
     repo_path: Path,
@@ -218,8 +230,6 @@ def run_python_script(
 
     Same interface as :func:`run_shell_script` but invokes via ``python3``.
     """
-    import sys
-
     env = os.environ.copy()
     # Use pre-seeded spec-list.csv instead of fetching from network
     env["SKIP_CSV_FETCH"] = "1"

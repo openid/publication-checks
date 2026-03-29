@@ -10,7 +10,7 @@ if _TESTS_DIR not in sys.path:
     sys.path.insert(0, _TESTS_DIR)
 
 from conftest import _build_spec_html
-from e2e_helpers import create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK
+from e2e_helpers import create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK, assert_no_unexpected_fails
 
 pytestmark = pytest.mark.e2e
 
@@ -68,6 +68,7 @@ def test_implementers_through_process(tmp_path, run_process):
         f"Expected exit 0 but got {result.returncode}.\n"
         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
+    assert_no_unexpected_fails(result)
     assert "IMPLEMENTERS" in result.stdout
     assert "CONGRATULATIONS" in result.stdout
 
@@ -250,6 +251,7 @@ def test_approved_errata_accepted(tmp_path, run_process):
         f"Expected exit 0 but got {result.returncode}.\n"
         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
+    assert_no_unexpected_fails(result)
     assert "ERRATA" in result.stdout
     assert "CONGRATULATIONS" in result.stdout
 

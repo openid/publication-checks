@@ -24,6 +24,7 @@ if _TESTS_DIR not in sys.path:
 from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import (  # noqa: E402
     create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+    assert_no_unexpected_fails,
 )
 
 
@@ -158,38 +159,6 @@ def test_draft_errata_accepted_e2e(tmp_path):
         f"Expected exit 0 but got {result.returncode}.\n"
         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
+    assert_no_unexpected_fails(result)
     assert "DRAFT_ERRATA" in result.stdout
     assert "CONGRATULATIONS" in result.stdout
-
-
-# ===================================================================
-# PR #161 real-world test
-# ===================================================================
-
-_PUBLICATION_REPO = "/Users/joseph/Documents/openid/publication"
-_PR_BRANCH = "origin/propose/openid-connect-4-identity-assurance-1_0-17"
-
-
-@pytest.mark.skipif(
-    not os.path.isdir(_PUBLICATION_REPO),
-    reason="publication repo not available",
-)
-def test_pr161_ida_spec_is_draft_but_final_exists():
-    """PR #161's IDA spec is titled 'draft 17' without errata language,
-    so content_state correctly detects it as DRAFT. Since a final exists,
-    the post-final check in process.py would reject it."""
-    result = subprocess.run(
-        ["git", "show",
-         f"{_PR_BRANCH}:ekyc-ida/openid-connect-4-identity-assurance-1_0-17.html"],
-        cwd=_PUBLICATION_REPO,
-        capture_output=True,
-    )
-    if result.returncode != 0:
-        pytest.skip("Could not load PR #161 file")
-    content = result.stdout.decode("utf-8")
-
-    state_result = spec_validator.content_state(content)
-    assert state_result["state"] == "DRAFT", (
-        "PR #161 IDA spec should be DRAFT (not DRAFT_ERRATA) - "
-        "the title says 'draft 17' without any errata language"
-    )
