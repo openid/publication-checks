@@ -72,10 +72,7 @@ def _check_history_references_draft(draft_num_match, history_result):
     """Return True (pass) if the history section references the current draft number."""
     if draft_num_match and history_result.get("history"):
         draft_num = draft_num_match.group(1)
-        draft_int = int(draft_num)
-        history_text = " ".join(str(e) for e in history_result["history"])
-        # Match both padded (-01) and unpadded (-1) forms
-        if f"-{draft_int:02d}" in history_text or f"-{draft_int}" in history_text:
+        if spec_validator.history_references_draft(history_result, draft_num):
             echo_good(f"PASS: History section references draft {draft_num}")
             return True
         else:
@@ -205,16 +202,7 @@ def main() -> int:
                 try:
                     with open(md_path, "r", encoding="utf-8") as mdf:
                         md_content = mdf.read()
-                    # Common file include patterns in markdown specs.
-                    # Markdown uses <{{path/file.ext}}> for file includes.
-                    # Note: {{RFC6749}} is a citation reference, NOT a file include.
-                    has_includes = bool(
-                        re.search(r'<\{\{[^}]+\}\}', md_content)  # <{{examples/file.json}}
-                        or re.search(r'!include\b', md_content, re.IGNORECASE)
-                        or re.search(r'\{%\s*include', md_content)  # {% include %}
-                        or re.search(r'^#include\b', md_content, re.MULTILINE)
-                    )
-                    if has_includes:
+                    if spec_validator.check_md_includes(md_content):
                         echo_error(
                             f"FAIL: {stem}.md references external files but no .zip archive "
                             f"is provided. A .zip containing all source files is required."
@@ -409,7 +397,7 @@ def main() -> int:
         print("Checking for draft disclaimer")
         # -- Draft disclaimer must not appear in FINAL or ERRATA -------------
         if state in ("FINAL", "ERRATA"):
-            if "This document is not an OIDF International Standard" in content:
+            if spec_validator.check_draft_disclaimer(content):
                 echo_error(
                     f"FAIL: {file} contains 'This document is not an OIDF International Standard' "
                     "which must be removed for Final and Errata publications"
@@ -420,13 +408,7 @@ def main() -> int:
 
         print("Checking for IETF IPR boilerplate")
         # -- IETF IPR boilerplate must not be present ---
-        ietf_ipr_strings = [
-            "IETF Trust",
-            "BCP 78",
-            "BCP 79",
-            "subject to the rights, licenses and restrictions contained in BCP",
-        ]
-        found_ipr = [s for s in ietf_ipr_strings if s in content]
+        found_ipr = spec_validator.check_ietf_ipr(content)
         if found_ipr:
             matched = ", ".join(f"'{s}'" for s in found_ipr)
             if state in ("FINAL", "ERRATA"):
@@ -507,12 +489,7 @@ def main() -> int:
 
         print("Checking reference URLs")
         # -- OpenID references should use canonical URLs ---
-        non_canonical_patterns = [r'openid\.github\.io', r'openid\.bitbucket\.io']
-        non_canonical_urls = []
-        for pattern in non_canonical_patterns:
-            non_canonical_urls.extend(re.findall(
-                r'https?://[^\s"<>]*' + pattern + r'[^\s"<>]*', content
-            ))
+        non_canonical_urls = spec_validator.check_noncanonical_refs(content)
         if non_canonical_urls:
             unique_urls = sorted(set(non_canonical_urls))
             url_list = ", ".join(unique_urls)

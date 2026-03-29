@@ -530,6 +530,55 @@ def content_history(content, debug=False):
     
     return result
 
+# ---------------------------------------------------------------------------
+# Additional content checks
+# ---------------------------------------------------------------------------
+
+_IETF_IPR_PHRASES = [
+    "IETF Trust",
+    "BCP 78",
+    "BCP 79",
+    "subject to the rights, licenses and restrictions contained in BCP",
+]
+
+_DRAFT_DISCLAIMER = "This document is not an OIDF International Standard"
+
+
+def history_references_draft(history_result, draft_num):
+    """Check if the history section references the given draft number."""
+    if not history_result.get("history"):
+        return True  # No history entries to check
+    draft_int = int(draft_num)
+    history_text = " ".join(str(e) for e in history_result["history"])
+    return f"-{draft_int:02d}" in history_text or f"-{draft_int}" in history_text
+
+
+def check_ietf_ipr(content):
+    """Check if content contains IETF Trust IPR boilerplate. Returns list of found phrases."""
+    return [phrase for phrase in _IETF_IPR_PHRASES if phrase in content]
+
+
+def check_draft_disclaimer(content):
+    """Check if content contains the draft disclaimer text. Returns True if found."""
+    return _DRAFT_DISCLAIMER in content
+
+
+def check_noncanonical_refs(content):
+    """Find references using openid.github.io or openid.bitbucket.io instead of openid.net/specs/."""
+    urls = re.findall(r'href="(https?://openid\.(?:github|bitbucket)\.io/[^"]*)"', content)
+    return urls
+
+
+def check_md_includes(md_content):
+    """Check if markdown content references external files via include directives."""
+    return bool(
+        re.search(r'<\{\{[^}]+\}\}', md_content)
+        or re.search(r'!include\b', md_content, re.IGNORECASE)
+        or re.search(r'\{%\s*include', md_content)
+        or re.search(r'^#include\b', md_content, re.MULTILINE)
+    )
+
+
 def get_spec_list_csv():
     url = 'https://openid.net/specs/'
     try:
