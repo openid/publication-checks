@@ -6,6 +6,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -15,11 +19,12 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
+          cache: pip
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run tests
+      - name: Run unit tests
         run: python -m pytest tests/ -v --tb=short -m "not e2e"
 
   e2e:
@@ -30,9 +35,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
+          cache: pip
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
       - name: Run e2e tests
-        run: python -m pytest tests/ -v --tb=short -m "e2e" -k "not pr161"
+        run: python -m pytest tests/ -v --tb=short -m "e2e"
