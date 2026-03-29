@@ -26,18 +26,26 @@ Draft numbers start at -00 and must be zero-padded (two digits).
 pip install -r requirements.txt
 python3 -m pytest tests/ -v                    # all tests
 python3 -m pytest tests/ -m "not e2e"          # unit tests only (no network)
-python3 -m pytest tests/ -m e2e                # e2e tests (needs network)
-python3 -m pytest tests/ -m e2e -k "not pr161" # e2e without PR #161 tests
+python3 -m pytest tests/ -m e2e                # e2e tests
 ```
 
-E2e tests create temporary git repos and run process.py/publish.py against them. They require network access to fetch the spec list from openid.net.
+E2e tests create temporary git repos and run process.py/publish.py against them. The `SKIP_CSV_FETCH` env var is set automatically so e2e tests use pre-seeded CSV data instead of fetching from openid.net. Some tests that exercise URL reference checking still need network access and are marked with `@SKIP_NO_NETWORK`.
+
+## Code Organisation Principle
+
+**spec_validator.py** contains pure content validation: functions that take HTML/markdown content and return a result. No file I/O, no git operations, no print output.
+
+**process.py** contains pipeline orchestration: file discovery (git diff), file I/O, CSV operations, output formatting (PASS/FAIL messages), and calls to spec_validator functions.
+
+When adding a new check: if it examines content → add to spec_validator. If it needs the repo, filesystem, or CSV → add to process.py.
 
 ## Key Patterns
 
-- FINAL state is detected from HTML header metadata (`<dd class="intended-status">Final</dd>` or `<td class="header">Final</td>`), NOT from the title tag.
+- FINAL state is detected from HTML header metadata (`<dd class="intended-status">Final</dd>`, `<dd class="status">Final</dd>`, or `<td class="header">Final</td>`), NOT from the title tag.
 - The PATTERNS dict in spec_validator.py defines all regex patterns for filename and content matching.
 - `process.py` and `publish.py` import from `spec_validator` directly (no subprocess calls).
 - The only subprocess call is `git diff` to find changed HTML files.
+- Known WG directories are discovered from `origin/main` in the publication repo, not hardcoded.
 
 ## Checks Performed by process.py
 
