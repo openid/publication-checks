@@ -43,7 +43,7 @@ def test_ietf_trust_text_in_final_fails(tmp_path):
         "connect/openid-connect-test-1_0-final.html": html,
         "connect/openid-connect-test-1_0-final.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 1
@@ -68,7 +68,7 @@ def test_ietf_trust_text_in_draft_warns(tmp_path):
         "connect/openid-connect-test-1_0-01.html": html,
         "connect/openid-connect-test-1_0-01.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 0
@@ -89,7 +89,7 @@ def test_no_ietf_trust_text_passes(tmp_path):
         "connect/openid-connect-test-1_0-01.html": html,
         "connect/openid-connect-test-1_0-01.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 0
@@ -114,7 +114,7 @@ def test_github_io_reference_warns(tmp_path):
         "connect/openid-connect-test-1_0-01.html": html,
         "connect/openid-connect-test-1_0-01.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert "openid.github.io" in result.stdout
@@ -139,7 +139,7 @@ def test_bitbucket_io_reference_warns(tmp_path):
         "connect/openid-connect-test-1_0-01.html": html,
         "connect/openid-connect-test-1_0-01.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert "openid.bitbucket.io" in result.stdout

@@ -41,7 +41,7 @@ def test_draft_00_is_always_sequential(tmp_path):
         "connect/openid-connect-test-1_0-00.html": html,
         "connect/openid-connect-test-1_0-00.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert "Draft numbering is sequential" in result.stdout
@@ -62,7 +62,7 @@ def test_draft_02_warns_when_01_not_on_openid_net(tmp_path):
         "connect/openid-connect-test-1_0-02.html": html,
         "connect/openid-connect-test-1_0-02.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     # Should warn (previous draft not on openid.net) but still pass overall

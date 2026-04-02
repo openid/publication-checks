@@ -36,7 +36,15 @@ def test_pr161_missing_zip_warned(tmp_path):
         "ekyc-ida/openid-connect-4-identity-assurance-1_0-17.md": "# Spec\n",
         "ekyc-ida/openid-connect-4-identity-assurance-1_0-17.xml": "<xml/>\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    _csv_with_prev = (
+        "Filename,Date,Size\n"
+        "openid-connect-4-identity-assurance-1_0-final.html,2024-01-15,50K\n"
+        "openid-connect-4-identity-assurance-1_0-16.html,2023-12-01,48K\n"
+        "openid-connect-4-identity-assurance-1_0-16.md,2023-12-01,30K\n"
+        "openid-connect-4-identity-assurance-1_0-16.xml,2023-12-01,35K\n"
+        "openid-connect-4-identity-assurance-1_0-16.zip,2023-12-01,40K\n"
+    )
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content=_csv_with_prev)
     result = run_python_script("process.py", repo_path, scripts_path)
 
     # Should warn about missing .zip since draft 16 had one
@@ -60,7 +68,7 @@ def test_md_with_includes_but_no_zip_fails(tmp_path):
         "connect/openid-connect-test-1_0-01.md": md_with_includes,
         # No .zip
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 1
@@ -82,7 +90,7 @@ def test_md_without_includes_no_zip_warns(tmp_path):
         "connect/openid-connect-test-1_0-01.html": html,
         "connect/openid-connect-test-1_0-01.md": "# Simple spec\n\nNo includes here.\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 0
@@ -104,7 +112,7 @@ def test_draft_01_no_companion_check(tmp_path):
         "connect/openid-connect-test-1_0-01.html": html,
         "connect/openid-connect-test-1_0-01.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     # Should not mention companion files for draft 01

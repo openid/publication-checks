@@ -166,7 +166,7 @@ def test_process_version_2_0(tmp_path):
         "connect/openid-example-2_0-01.html": html,
         "connect/openid-example-2_0-01.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 0, (
@@ -191,7 +191,7 @@ def test_process_rejects_single_digit_draft_number(tmp_path):
         "connect/openid-example-1_0-1.html": html,
         "connect/openid-example-1_0-1.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     # Single-digit filename won't match DRAFT pattern, so state detection
