@@ -470,12 +470,12 @@ def content_authors(content, debug=False):
                     name_row = rows[i]
                     org_row = rows[i+1]
                     
-                    name_cell = name_row.find_all('td', class_='author-text')[-1]  # Get the last td
-                    org_cell = org_row.find_all('td', class_='author-text')[-1]  # Get the last td
-                    
-                    if name_cell and org_cell:
-                        name = name_cell.text.strip()
-                        org = org_cell.text.strip()
+                    name_cells = name_row.find_all('td', class_='author-text')
+                    org_cells = org_row.find_all('td', class_='author-text')
+
+                    if name_cells and org_cells:
+                        name = name_cells[-1].text.strip()
+                        org = org_cells[-1].text.strip()
                         if name or org:
                             result["authors"].append({"name": name, "organization": org})
     
