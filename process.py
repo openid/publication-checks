@@ -312,9 +312,15 @@ def main() -> int:
                 print(f"  {k}: {v}")
 
         print(f"Document History:")
-        for k, v in history_result.items():
-            if k != "debug":
-                print(f"  {k}: {v}")
+        print(f"  history_present: {history_result['history_present']}")
+        if history_result.get("history"):
+            entries = history_result["history"]
+            preview = "; ".join(str(e) for e in entries[:5])
+            if len(preview) > 80:
+                preview = preview[:80] + "..."
+            if len(entries) > 5:
+                preview += f" (+{len(entries) - 5} more)"
+            print(f"  entries: {preview}")
 
         # Derive versioned / unversioned names (same logic as shell)
         versioned_name = os.path.splitext(os.path.basename(file))[0]
