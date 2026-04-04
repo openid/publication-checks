@@ -12,13 +12,13 @@ sys.path.insert(0, os.path.join(_TESTS_DIR, ".."))
 
 from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import (  # noqa: E402
-    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+    create_test_repo, run_python_script, today_str,
 )
 
 pytestmark = pytest.mark.e2e
 
 
-@SKIP_NO_NETWORK
+
 def test_history_references_current_draft(tmp_path):
     """Draft -01 with history entry for -01 should pass."""
     today = today_str()
@@ -42,7 +42,7 @@ def test_history_references_current_draft(tmp_path):
     assert "History section references draft 01" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_history_missing_current_draft(tmp_path):
     """Draft -02 with history only containing -01 should fail."""
     today = today_str()

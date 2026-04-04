@@ -68,6 +68,17 @@ def final_exists_in_csv(unversioned_name, csv_path):
     return False
 
 
+def _show_history_diagnostic():
+    """Print diagnostic info for missing Document History section."""
+    echo_info(
+        "  The Document History section must use one of these heading formats:\n"
+        "    - <section id=\"appendix-X\"><h2 id=\"name-document-history\">...Document History...</h2>\n"
+        "    - <h1 id=\"...-document-history\">...Document History</h1>\n"
+        "    - <h3>Appendix X.&nbsp; Document History</h3>\n"
+        "  The heading must contain the text 'Document History'."
+    )
+
+
 def _check_history_references_draft(draft_num_match, history_result):
     """Return True (pass) if the history section references the current draft number."""
     if draft_num_match and history_result.get("history"):
@@ -287,6 +298,12 @@ def main() -> int:
         state_result = spec_validator.content_state(content, debug)
         state = state_result["state"]
 
+        # IMPLEMENTERS filenames (-ID1.html) use a standard DRAFT title,
+        # so content_state returns DRAFT.  Use the filename to override.
+        fn_state = spec_validator.filename_state(base_html)
+        if fn_state["state"] == "IMPLEMENTERS" and state == "DRAFT":
+            state = "IMPLEMENTERS"
+
         # Print state info similar to shell (the shell calls run_cli_tool which
         # prints the cli-tool output for -content-state and -content-history).
         print(f"Content State:")
@@ -323,7 +340,8 @@ def main() -> int:
                 if not _check_history_references_draft(draft_num_match, history_result):
                     doc_fails = True
             else:
-                echo_error("FAIL: DRAFT state but does not have required history section")
+                echo_error(f"FAIL: {file} is a draft but does not have a Document History section. Drafts require a history section listing changes.")
+                _show_history_diagnostic()
                 doc_fails = True
 
             # Check sequential draft numbering
@@ -347,7 +365,8 @@ def main() -> int:
             # Check that no final already exists for this spec
             if final_exists_in_csv(unversioned_name, csv_path):
                 echo_error(
-                    "FAIL: A final spec already exists. Post-final drafts must be titled like "
+                    f"FAIL: {file} is a draft but a Final spec already exists on openid.net. "
+                    "Post-final drafts must include errata language in the title, e.g. "
                     "'Spec Name 1.0 - Draft NN incorporating errata set N'"
                 )
                 doc_fails = True
@@ -356,14 +375,15 @@ def main() -> int:
             if not has_history:
                 echo_good("PASS: Document does not have a history section")
             else:
-                echo_error("FAIL: FINAL state but history section exists")
+                echo_error(f"FAIL: {file} is a Final spec but contains a Document History section. Remove the history section before publishing as Final.")
                 doc_fails = True
         elif state == "IMPLEMENTERS":
             echo_good("Document is in IMPLEMENTERS state")
-            if not has_history:
-                echo_good("PASS: Document does not have a history section")
+            if has_history:
+                echo_good("PASS: Document has a history section")
             else:
-                echo_error("FAIL: IMPLEMENTERS state but history section exists")
+                echo_error(f"FAIL: {file} is an Implementers Draft but does not have a Document History section. Drafts require a history section listing changes.")
+                _show_history_diagnostic()
                 doc_fails = True
         elif state in ("ERRATA", "DRAFT_ERRATA"):
             echo_good(f"Document is in {state} state")
@@ -375,21 +395,22 @@ def main() -> int:
                     if not _check_history_references_draft(draft_num_match, history_result):
                         doc_fails = True
                 else:
-                    echo_error("FAIL: DRAFT_ERRATA state but does not have required history section")
+                    echo_error(f"FAIL: {file} has 'errata' in the title and is a draft, but does not have a Document History section. Draft errata specs require a history section listing changes.")
+                    _show_history_diagnostic()
                     doc_fails = True
             else:
                 # Approved errata (post-vote) must not have history
                 if not has_history:
                     echo_good("PASS: Document does not have a history section")
                 else:
-                    echo_error("FAIL: ERRATA state but history section exists")
+                    echo_error(f"FAIL: {file} is an approved errata but contains a Document History section. Remove the history section before publishing.")
                     doc_fails = True
 
             # Both ERRATA and DRAFT_ERRATA require a predecessor final spec
             if final_exists_in_csv(unversioned_name, csv_path):
                 echo_good("PASS: A predecessor final spec exists")
             else:
-                echo_error("FAIL: A predecessor final spec does not exist")
+                echo_error(f"FAIL: {file} is an errata but no predecessor Final spec was found on openid.net. An errata can only be published after the spec has reached Final.")
                 doc_fails = True
         else:
             echo_error(f"FAIL: Unexpected document state '{state}'. The title should contain 'Draft NN', 'incorporating errata set N', or the header should indicate 'Status: Final' - see ERROR-MODES.md.")
@@ -551,7 +572,7 @@ def main() -> int:
 
         print("Checking publication date")
         # -- Publication date ----------------------------------------------
-        today = datetime.date.today().isoformat()
+        today = os.environ.get("OVERRIDE_TODAY") or datetime.date.today().isoformat()
         print(f"Today is: {today}")
 
         date_result, _ = spec_validator.content_date(content, compare_date=today, debug=debug)

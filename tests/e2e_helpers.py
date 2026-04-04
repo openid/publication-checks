@@ -39,25 +39,6 @@ def today_str() -> str:
     return datetime.date.today().isoformat()
 
 
-def network_available() -> bool:
-    """Return True if we can reach openid.net (quick check)."""
-    try:
-        result = subprocess.run(
-            ["curl", "-sf", "--max-time", "5", "-o", "/dev/null",
-             "https://openid.net/specs/"],
-            capture_output=True,
-        )
-        return result.returncode == 0
-    except FileNotFoundError:
-        return False
-
-
-SKIP_NO_NETWORK = pytest.mark.skipif(
-    not network_available(),
-    reason="openid.net unreachable",
-)
-
-
 # Absolute path to the real publication-checks repo root.
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -234,6 +215,8 @@ def run_python_script(
     env = os.environ.copy()
     # Use pre-seeded spec-list.csv instead of fetching from network
     env["SKIP_CSV_FETCH"] = "1"
+    # Mock URL accessibility checks (returns True without network)
+    env["MOCK_URL_CHECK"] = "1"
     if env_overrides:
         env.update(env_overrides)
 

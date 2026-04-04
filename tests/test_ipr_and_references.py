@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(_TESTS_DIR, ".."))
 
 from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import (  # noqa: E402
-    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+    create_test_repo, run_python_script, today_str,
 )
 
 pytestmark = pytest.mark.e2e
@@ -23,7 +23,7 @@ _CSV_WITH_FINAL = (
 )
 
 
-@SKIP_NO_NETWORK
+
 def test_ietf_trust_text_in_final_fails(tmp_path):
     """A FINAL spec containing IETF Trust IPR boilerplate should fail."""
     today = today_str()
@@ -50,7 +50,7 @@ def test_ietf_trust_text_in_final_fails(tmp_path):
     assert "IETF Trust IPR boilerplate" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_ietf_trust_text_in_draft_warns(tmp_path):
     """A DRAFT spec containing IETF Trust IPR boilerplate should warn but pass."""
     today = today_str()
@@ -76,7 +76,7 @@ def test_ietf_trust_text_in_draft_warns(tmp_path):
     assert "IETF Trust IPR boilerplate" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_no_ietf_trust_text_passes(tmp_path):
     """A spec without IETF Trust IPR boilerplate should pass this check."""
     today = today_str()
@@ -96,7 +96,7 @@ def test_no_ietf_trust_text_passes(tmp_path):
     assert "No IETF Trust IPR boilerplate" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_github_io_reference_warns(tmp_path):
     """A spec with openid.github.io reference should warn."""
     today = today_str()
@@ -121,7 +121,7 @@ def test_github_io_reference_warns(tmp_path):
     assert "openid.net/specs/" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_bitbucket_io_reference_warns(tmp_path):
     """A spec with openid.bitbucket.io reference should warn."""
     today = today_str()

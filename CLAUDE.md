@@ -16,7 +16,7 @@ Validation tools for the OpenID Foundation specification publication pipeline.
 | FINAL | Status header: Final | No | `spec-1_0-final.html` |
 | ERRATA | "incorporating errata set N" | No | `spec-1_0-errata1.html` |
 | DRAFT_ERRATA | errata + draft in title | Yes | `spec-1_0-01.html` |
-| IMPLEMENTERS | "Spec 1.0 - Draft NN" (same as DRAFT) | No | `spec-1_0-ID1.html` |
+| IMPLEMENTERS | "Spec 1.0 - Draft NN" (same as DRAFT) | Yes | `spec-1_0-ID1.html` |
 
 Draft numbers start at -00 and must be zero-padded (two digits).
 
@@ -29,7 +29,7 @@ python3 -m pytest tests/ -m "not e2e"          # unit tests only (no network)
 python3 -m pytest tests/ -m e2e                # e2e tests
 ```
 
-E2e tests create temporary git repos and run process.py/publish.py against them. The `SKIP_CSV_FETCH` env var is set automatically so e2e tests use pre-seeded CSV data instead of fetching from openid.net. Some tests that exercise URL reference checking still need network access and are marked with `@SKIP_NO_NETWORK`.
+E2e tests create temporary git repos and run process.py/publish.py against them. No network access is required — `SKIP_CSV_FETCH` uses pre-seeded CSV data and `MOCK_URL_CHECK` makes URL accessibility checks return True without HTTP calls. The `OVERRIDE_TODAY` env var can fake the current date for tests using real fixture specs with old publication dates.
 
 ## Code Organisation Principle
 
@@ -53,7 +53,7 @@ When adding a new check: if it examines content → add to spec_validator. If it
 - Source files exist (.md or .xml required, .zip if md has includes)
 - Companion files match previous version
 - Document state detected and consistent with filename
-- History section present for DRAFT/DRAFT_ERRATA, absent for FINAL/ERRATA/IMPLEMENTERS
+- History section present for DRAFT/DRAFT_ERRATA/IMPLEMENTERS, absent for FINAL/ERRATA
 - History references current draft number
 - Sequential draft numbering (warning)
 - Post-final drafts must use errata title

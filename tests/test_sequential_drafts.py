@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(_TESTS_DIR, ".."))
 
 from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import (  # noqa: E402
-    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+    create_test_repo, run_python_script, today_str,
 )
 
 pytestmark = pytest.mark.e2e
@@ -25,7 +25,7 @@ _CSV_WITH_DRAFT_01 = (
 )
 
 
-@SKIP_NO_NETWORK
+
 def test_draft_00_is_always_sequential(tmp_path):
     """Draft -00 (first draft) should always pass the sequential check."""
     today = today_str()
@@ -47,7 +47,7 @@ def test_draft_00_is_always_sequential(tmp_path):
     assert "Draft numbering is sequential" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_draft_02_warns_when_01_not_on_openid_net(tmp_path):
     """Draft -02 for a test spec warns since draft -01 isn't published on openid.net."""
     today = today_str()
@@ -71,7 +71,7 @@ def test_draft_02_warns_when_01_not_on_openid_net(tmp_path):
     assert "sequential" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_draft_03_warns_when_02_missing(tmp_path):
     """Draft -03 should warn when draft -02 is not in the spec list."""
     today = today_str()
