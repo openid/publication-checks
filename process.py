@@ -68,14 +68,14 @@ def final_exists_in_csv(unversioned_name, csv_path):
     return False
 
 
-def _show_history_diagnostic(file):
+def _show_history_diagnostic():
     """Print diagnostic info for missing Document History section."""
     echo_info(
-        f"  The Document History section must use one of these heading formats:\n"
-        f"    - <section id=\"appendix-X\"><h2 id=\"name-document-history\">...Document History...</h2>\n"
-        f"    - <h1 id=\"...-document-history\">...Document History</h1>\n"
-        f"    - <h3>Appendix X.&nbsp; Document History</h3>\n"
-        f"  The heading must contain the text 'Document History'."
+        "  The Document History section must use one of these heading formats:\n"
+        "    - <section id=\"appendix-X\"><h2 id=\"name-document-history\">...Document History...</h2>\n"
+        "    - <h1 id=\"...-document-history\">...Document History</h1>\n"
+        "    - <h3>Appendix X.&nbsp; Document History</h3>\n"
+        "  The heading must contain the text 'Document History'."
     )
 
 
@@ -341,7 +341,7 @@ def main() -> int:
                     doc_fails = True
             else:
                 echo_error(f"FAIL: {file} is a draft but does not have a Document History section. Drafts require a history section listing changes.")
-                _show_history_diagnostic(file)
+                _show_history_diagnostic()
                 doc_fails = True
 
             # Check sequential draft numbering
@@ -383,7 +383,7 @@ def main() -> int:
                 echo_good("PASS: Document has a history section")
             else:
                 echo_error(f"FAIL: {file} is an Implementers Draft but does not have a Document History section. Drafts require a history section listing changes.")
-                _show_history_diagnostic(file)
+                _show_history_diagnostic()
                 doc_fails = True
         elif state in ("ERRATA", "DRAFT_ERRATA"):
             echo_good(f"Document is in {state} state")
@@ -396,7 +396,7 @@ def main() -> int:
                         doc_fails = True
                 else:
                     echo_error(f"FAIL: {file} has 'errata' in the title and is a draft, but does not have a Document History section. Draft errata specs require a history section listing changes.")
-                    _show_history_diagnostic(file)
+                    _show_history_diagnostic()
                     doc_fails = True
             else:
                 # Approved errata (post-vote) must not have history
