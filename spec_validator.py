@@ -388,6 +388,10 @@ def content_struct(content, debug=False):
     return result
 
 def check_url_accessibility(url, debug=False):
+    if os.environ.get("MOCK_URL_CHECK"):
+        if debug:
+            print(f"  Mocked URL check (accessible): {url}")
+        return True
     if debug:
         print(f"  Checking URL: {url}")
     try:
