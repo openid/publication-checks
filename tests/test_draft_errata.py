@@ -23,7 +23,7 @@ if _TESTS_DIR not in sys.path:
 
 from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import (  # noqa: E402
-    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+    create_test_repo, run_python_script, today_str,
     assert_no_unexpected_fails,
 )
 
@@ -109,7 +109,7 @@ class TestFinalExistsInCsv:
 # ===================================================================
 
 
-@SKIP_NO_NETWORK
+
 def test_draft_rejected_when_final_exists_e2e(tmp_path):
     """A plain DRAFT for openid-connect-4-identity-assurance-1_0 should be
     rejected because a -final already exists on openid.net."""
@@ -138,10 +138,10 @@ def test_draft_rejected_when_final_exists_e2e(tmp_path):
         f"Expected exit 1 but got {result.returncode}.\n"
         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
-    assert "final spec already exists" in result.stdout
+    assert "Final spec already exists" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_draft_errata_accepted_e2e(tmp_path):
     """A DRAFT_ERRATA for openid-connect-4-identity-assurance-1_0 should pass
     because the title correctly references errata and a final exists."""

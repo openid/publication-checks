@@ -18,7 +18,7 @@ if _TESTS_DIR not in sys.path:
 
 from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import (  # noqa: E402
-    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+    create_test_repo, run_python_script, today_str,
     assert_no_unexpected_fails,
 )
 
@@ -152,7 +152,7 @@ class TestFilenameMatchVersionVariants:
 # ===================================================================
 
 
-@SKIP_NO_NETWORK
+
 @pytest.mark.e2e
 def test_process_version_2_0(tmp_path):
     """process.py should handle version 2.0 specs correctly."""
@@ -177,7 +177,7 @@ def test_process_version_2_0(tmp_path):
     assert "CONGRATULATIONS" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 @pytest.mark.e2e
 def test_process_rejects_single_digit_draft_number(tmp_path):
     """process.py should reject single-digit draft numbers (must be zero-padded)."""

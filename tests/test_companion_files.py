@@ -12,13 +12,13 @@ sys.path.insert(0, os.path.join(_TESTS_DIR, ".."))
 
 from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import (  # noqa: E402
-    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+    create_test_repo, run_python_script, today_str,
 )
 
 pytestmark = pytest.mark.e2e
 
 
-@SKIP_NO_NETWORK
+
 def test_pr161_missing_zip_warned(tmp_path):
     """PR #161 submits draft 17 without .zip, but draft 16 had one on openid.net.
     The check should warn about the missing .zip."""
@@ -52,7 +52,7 @@ def test_pr161_missing_zip_warned(tmp_path):
     assert ".zip" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_md_with_includes_but_no_zip_fails(tmp_path):
     """If .md references external files but no .zip is provided, should fail."""
     today = today_str()
@@ -76,7 +76,7 @@ def test_md_with_includes_but_no_zip_fails(tmp_path):
     assert ".zip" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_md_without_includes_no_zip_warns(tmp_path):
     """If .md has no includes and no .zip, just warn (not fail)."""
     today = today_str()
@@ -98,7 +98,7 @@ def test_md_without_includes_no_zip_warns(tmp_path):
     assert "No .zip file for" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_draft_01_no_companion_check(tmp_path):
     """Draft -01 has no previous version, so no companion file check runs."""
     today = today_str()

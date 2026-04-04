@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(_TESTS_DIR, ".."))
 
 from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import (  # noqa: E402
-    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+    create_test_repo, run_python_script, today_str,
     assert_no_unexpected_fails,
 )
 
@@ -26,7 +26,7 @@ _CSV_WITH_FINAL = (
 )
 
 
-@SKIP_NO_NETWORK
+
 def test_final_with_draft_disclaimer_fails(tmp_path):
     """A FINAL spec containing the draft disclaimer should fail."""
     today = today_str()
@@ -54,7 +54,7 @@ def test_final_with_draft_disclaimer_fails(tmp_path):
     assert "not an OIDF International Standard" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_final_without_draft_disclaimer_passes(tmp_path):
     """A FINAL spec without the draft disclaimer should pass this check."""
     today = today_str()
@@ -78,7 +78,7 @@ def test_final_without_draft_disclaimer_passes(tmp_path):
     assert "No draft disclaimer" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_draft_with_disclaimer_is_fine(tmp_path):
     """A DRAFT spec is allowed to have the disclaimer - no check applied."""
     today = today_str()

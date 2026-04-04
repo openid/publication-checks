@@ -242,7 +242,7 @@ def test_process_py_on_pr161(tmp_path, pr161_files):
     expected_fails = [
         "references external files",                    # both: .md has includes, no .zip
         "Previous version",                             # both: prev version had .zip
-        "final spec already exists",                    # both: should use errata title
+        "Final spec already exists",                    # both: should use errata title
         "Problem with References",                      # both: 404 on wg references URL
         "Missing sections: ABSTRACT",                   # both: xml2rfc format gap
         "did not pass all checks",                      # both: summary line
@@ -264,7 +264,7 @@ def test_process_py_on_pr161(tmp_path, pr161_files):
     # Verify key expected failures are present
     assert any("references external files" in f for f in fail_lines)
     assert any("Previous version" in f for f in fail_lines)
-    assert any("final spec already exists" in f for f in fail_lines)
+    assert any("Final spec already exists" in f for f in fail_lines)
     assert any("Missing sections: ABSTRACT" in f for f in fail_lines)
 
 

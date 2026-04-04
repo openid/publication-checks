@@ -25,7 +25,7 @@ if _TESTS_DIR not in sys.path:
 
 from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import (  # noqa: E402
-    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+    create_test_repo, run_python_script, today_str,
     assert_no_unexpected_fails,
 )
 
@@ -64,7 +64,7 @@ def run_publish():
 # ===================================================================
 
 
-@SKIP_NO_NETWORK
+
 def test_draft_publish(tmp_path, run_publish):
     """Draft HTML + .md should produce versioned + unversioned .html and .md."""
     today = today_str()
@@ -102,7 +102,7 @@ def test_draft_publish(tmp_path, run_publish):
     )
 
 
-@SKIP_NO_NETWORK
+
 def test_draft_with_zip(tmp_path, run_publish):
     """Draft HTML + .md + .zip should also produce .zip copies."""
     today = today_str()
@@ -137,7 +137,7 @@ def test_draft_with_zip(tmp_path, run_publish):
     )
 
 
-@SKIP_NO_NETWORK
+
 def test_final_publish(tmp_path, run_publish):
     """Final HTML + .md should produce versioned, unversioned, and -final copies."""
     today = today_str()
@@ -183,7 +183,7 @@ def test_final_publish(tmp_path, run_publish):
     )
 
 
-@SKIP_NO_NETWORK
+
 def test_unknown_state_fails(tmp_path, run_publish):
     """An unrecognisable title should cause the script to exit 1."""
     today = today_str()
@@ -212,7 +212,7 @@ def test_unknown_state_fails(tmp_path, run_publish):
     )
 
 
-@SKIP_NO_NETWORK
+
 def test_missing_source_fails(tmp_path, run_publish):
     """HTML only (no .md or .xml) should fail with 'requires corresponding source'."""
     today = today_str()
@@ -290,7 +290,7 @@ def test_errata_publish_uses_errata_suffix(tmp_path, run_publish):
     )
 
 
-@SKIP_NO_NETWORK
+
 def test_implementers_publish(tmp_path, run_publish):
     """IMPLEMENTERS draft should produce versioned + unversioned .html and .md."""
     today = today_str()
@@ -333,7 +333,7 @@ def test_implementers_publish(tmp_path, run_publish):
     )
 
 
-@SKIP_NO_NETWORK
+
 def test_draft_with_xml_instead_of_md(tmp_path, run_publish):
     """Draft HTML + .xml (no .md) should succeed and produce unversioned copies."""
     today = today_str()
@@ -367,7 +367,7 @@ def test_draft_with_xml_instead_of_md(tmp_path, run_publish):
     )
 
 
-@SKIP_NO_NETWORK
+
 def test_final_with_zip(tmp_path, run_publish):
     """Final HTML + .md + .zip should produce -final.zip and unversioned .zip."""
     today = today_str()
@@ -404,7 +404,7 @@ def test_final_with_zip(tmp_path, run_publish):
     )
 
 
-@SKIP_NO_NETWORK
+
 def test_draft_versioned_copy_exists(tmp_path, run_publish):
     """Draft publish should create BOTH versioned and unversioned HTML."""
     today = today_str()

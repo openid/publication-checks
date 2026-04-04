@@ -24,7 +24,7 @@ if _TESTS_DIR not in sys.path:
 
 from conftest import _build_spec_html  # noqa: E402
 from e2e_helpers import (  # noqa: E402
-    create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK,
+    create_test_repo, run_python_script, today_str,
     assert_no_unexpected_fails,
 )
 
@@ -62,7 +62,7 @@ _DEFAULT_CSV = (
 # ===================================================================
 
 
-@SKIP_NO_NETWORK
+
 def test_valid_draft_passes(tmp_path, run_process):
     """A fully valid draft with .md source, all sections, recent date and
     history section should exit 0 and print CONGRATULATIONS."""
@@ -95,7 +95,7 @@ def test_valid_draft_passes(tmp_path, run_process):
     assert "CONGRATULATIONS" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_no_html_files_fails(tmp_path, run_process):
     """When no HTML files have changed the script should exit 1."""
     # Commit only a markdown file – no .html
@@ -112,7 +112,7 @@ def test_no_html_files_fails(tmp_path, run_process):
     assert "No HTML files have changed" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_multiple_wg_dirs_fails(tmp_path, run_process):
     """HTML files in two WG sub-directories should trigger a failure."""
     today = today_str()
@@ -144,7 +144,7 @@ def test_multiple_wg_dirs_fails(tmp_path, run_process):
     assert "More than one WG sub-directory" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_missing_source_fails(tmp_path, run_process):
     """HTML without a .md or .xml companion should fail."""
     today = today_str()
@@ -168,7 +168,7 @@ def test_missing_source_fails(tmp_path, run_process):
     assert "Markdown or XML Source is required" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_duplicate_filename_fails(tmp_path, run_process):
     """A filename that already exists in the spec list should fail."""
     today = today_str()
@@ -194,7 +194,7 @@ def test_duplicate_filename_fails(tmp_path, run_process):
     assert "already exists" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_draft_missing_history_fails(tmp_path, run_process):
     """A draft without a Document History section should fail."""
     today = today_str()
@@ -216,10 +216,10 @@ def test_draft_missing_history_fails(tmp_path, run_process):
     result = run_process(repo_path, scripts_path)
 
     assert result.returncode == 1
-    assert "does not have required history" in result.stdout
+    assert "does not have a Document History section" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_final_with_history_fails(tmp_path, run_process):
     """A final spec that still has a history section should fail."""
     today = today_str()
@@ -242,10 +242,10 @@ def test_final_with_history_fails(tmp_path, run_process):
     result = run_process(repo_path, scripts_path)
 
     assert result.returncode == 1
-    assert "FINAL state but history section exists" in result.stdout
+    assert "Final spec but contains a Document History section" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_stale_date_fails(tmp_path, run_process):
     """A publication date older than 10 days should fail."""
     html = _build_spec_html(
@@ -268,7 +268,7 @@ def test_stale_date_fails(tmp_path, run_process):
     assert "more than 10 days ago" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_bad_notices_fails(tmp_path, run_process):
     """Missing / incorrect Notices section should fail."""
     today = today_str()
@@ -293,7 +293,7 @@ def test_bad_notices_fails(tmp_path, run_process):
     assert "Problem with Notices" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_missing_structure_fails(tmp_path, run_process):
     """Omitting required structural sections should fail."""
     today = today_str()

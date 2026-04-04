@@ -10,7 +10,7 @@ if _TESTS_DIR not in sys.path:
     sys.path.insert(0, _TESTS_DIR)
 
 from conftest import _build_spec_html
-from e2e_helpers import create_test_repo, run_python_script, today_str, SKIP_NO_NETWORK, assert_no_unexpected_fails
+from e2e_helpers import create_test_repo, run_python_script, today_str, assert_no_unexpected_fails
 
 pytestmark = pytest.mark.e2e
 
@@ -41,15 +41,15 @@ _CSV_NO_FINAL = "Filename,Date,Size\n"
 # ===================================================================
 
 
-@SKIP_NO_NETWORK
+
 def test_implementers_through_process(tmp_path, run_process):
-    """An Implementers Draft with no history should pass all checks (exit 0)."""
+    """An Implementers Draft with history should pass all checks (exit 0)."""
     today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Implementers Draft 2",
         date=today,
         year=today[:4],
-        include_history=False,
+        include_history=True,
         include_notices=True,
         include_authors=True,
         include_all_sections=True,
@@ -99,7 +99,7 @@ def test_errata_without_predecessor_final(tmp_path, run_process):
         f"Expected exit 1 but got {result.returncode}.\n"
         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
-    assert "predecessor final spec does not exist" in result.stdout
+    assert "no predecessor Final spec was found" in result.stdout
 
 
 def test_errata_with_history_fails(tmp_path, run_process):
@@ -128,7 +128,7 @@ def test_errata_with_history_fails(tmp_path, run_process):
         f"Expected exit 1 but got {result.returncode}.\n"
         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
-    assert "ERRATA state but history section exists" in result.stdout
+    assert "approved errata but contains a Document History section" in result.stdout
 
 
 def test_title_h1_mismatch(tmp_path, run_process):
@@ -224,7 +224,7 @@ def test_missing_authors(tmp_path, run_process):
     assert "Problem with authors" in result.stdout
 
 
-@SKIP_NO_NETWORK
+
 def test_approved_errata_accepted(tmp_path, run_process):
     """An approved errata with no history and a predecessor final should pass."""
     today = today_str()
