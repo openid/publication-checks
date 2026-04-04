@@ -47,7 +47,7 @@ def test_final_with_draft_disclaimer_fails(tmp_path):
         "connect/openid-connect-test-1_0-final.html": html,
         "connect/openid-connect-test-1_0-final.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 1
@@ -70,7 +70,7 @@ def test_final_without_draft_disclaimer_passes(tmp_path):
         "connect/openid-connect-test-1_0-final.html": html,
         "connect/openid-connect-test-1_0-final.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 0
@@ -96,7 +96,7 @@ def test_draft_with_disclaimer_is_fine(tmp_path):
         "connect/openid-connect-test-1_0-01.html": html,
         "connect/openid-connect-test-1_0-01.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 0

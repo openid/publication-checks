@@ -240,7 +240,6 @@ def test_missing_source_fails(tmp_path, run_publish):
     assert "requires corresponding source" in result.stdout
 
 
-@SKIP_NO_NETWORK
 def test_errata_publish_uses_errata_suffix(tmp_path, run_publish):
     """ERRATA should create -errata# suffixed files, NOT -final.
 
@@ -259,7 +258,14 @@ def test_errata_publish_uses_errata_suffix(tmp_path, run_publish):
         "connect/openid-connect-test-1_0-01.html": html,
         "connect/openid-connect-test-1_0-01.md": "# Test spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    # Seed CSV so publish.py can determine the next errata number without network
+    csv_content = (
+        "Filename,Date,Size\n"
+        "openid-connect-test-1_0-final.html,2025-01-15,50K\n"
+    )
+    repo_path, scripts_path = create_test_repo(
+        tmp_path, spec_files, spec_list_csv_content=csv_content,
+    )
     to_publish = _setup_publish_dir(repo_path)
 
     result = run_publish(repo_path, scripts_path)
@@ -270,14 +276,12 @@ def test_errata_publish_uses_errata_suffix(tmp_path, run_publish):
     )
 
     published = {p.name for p in to_publish.iterdir()}
-    # Should have an -errata# suffix (number depends on what's on openid.net)
-    errata_htmls = [f for f in published if "-errata" in f and f.endswith(".html")]
-    assert len(errata_htmls) >= 1, (
-        f"Expected at least one -errata# HTML file. Got: {sorted(published)}"
+    # Should have -errata1 suffix (first errata, no prior errata in CSV)
+    assert "openid-connect-test-1_0-errata1.html" in published, (
+        f"Expected -errata1 HTML file. Got: {sorted(published)}"
     )
-    errata_mds = [f for f in published if "-errata" in f and f.endswith(".md")]
-    assert len(errata_mds) >= 1, (
-        f"Expected at least one -errata# MD file. Got: {sorted(published)}"
+    assert "openid-connect-test-1_0-errata1.md" in published, (
+        f"Expected -errata1 MD file. Got: {sorted(published)}"
     )
     # Should NOT have -final suffix for the errata companion files
     final_mds = [f for f in published if f.endswith("-final.md")]
@@ -434,7 +438,6 @@ def test_draft_versioned_copy_exists(tmp_path, run_publish):
     )
 
 
-@SKIP_NO_NETWORK
 def test_errata_creates_unversioned_copy(tmp_path, run_publish):
     """ERRATA should create an unversioned copy alongside the -errata# copy."""
     today = today_str()
@@ -449,7 +452,13 @@ def test_errata_creates_unversioned_copy(tmp_path, run_publish):
         "connect/openid-connect-test-1_0-01.html": html,
         "connect/openid-connect-test-1_0-01.md": "# Test spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    csv_content = (
+        "Filename,Date,Size\n"
+        "openid-connect-test-1_0-final.html,2025-01-15,50K\n"
+    )
+    repo_path, scripts_path = create_test_repo(
+        tmp_path, spec_files, spec_list_csv_content=csv_content,
+    )
     to_publish = _setup_publish_dir(repo_path)
 
     result = run_publish(repo_path, scripts_path)
@@ -460,17 +469,15 @@ def test_errata_creates_unversioned_copy(tmp_path, run_publish):
     )
 
     published = {p.name for p in to_publish.iterdir()}
-    errata_htmls = [f for f in published if "-errata" in f and f.endswith(".html")]
-    assert len(errata_htmls) >= 1, (
-        f"Expected at least one -errata# HTML file. Got: {sorted(published)}"
+    assert "openid-connect-test-1_0-errata1.html" in published, (
+        f"Expected -errata1 HTML file. Got: {sorted(published)}"
     )
     assert "openid-connect-test-1_0.html" in published, (
         f"Unversioned HTML missing. Got: {sorted(published)}"
     )
     # Companion files should also get errata suffix, not -final
-    errata_mds = [f for f in published if "-errata" in f and f.endswith(".md")]
-    assert len(errata_mds) >= 1, (
-        f"Expected -errata# .md file. Got: {sorted(published)}"
+    assert "openid-connect-test-1_0-errata1.md" in published, (
+        f"Expected -errata1 .md file. Got: {sorted(published)}"
     )
     final_mds = [f for f in published if f.endswith("-final.md")]
     assert len(final_mds) == 0, (

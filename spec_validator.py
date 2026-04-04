@@ -45,21 +45,21 @@ PATTERNS = {
     'FINAL_CONTENT': r'(?i)(?:<dd\s+class="(?:intended-)?status">\s*Final\s*</dd>|<td\s+class="header">\s*Final\s*</td>)',
     'IMPLEMENTERS_CONTENT': r'.*?\b\d+\.\d+\s*[-–—]\s*[Ii]mplementers?\s+[Dd]raft\s+(\d+).*',
     'ABSTRACT': r'(?:<h2[^>]*id="abstract"[^>]*>\s*<a[^>]*>Abstract</a>\s*</h2>|<h3>\s*Abstract\s*</h3>)',
-    'INTRODUCTION': r'(?:<(?:h2|h3)[^>]*(?:id="name-introduction")?[^>]*>(?:\d+\.?&nbsp;)?.*?Introduction(?:</a>)?\s*</(?:h2|h3)>)',
-    'NORMATIVE_REFERENCES': r'(?:<(?:h2|h3)[^>]*(?:id="name-normative-references")?[^>]*>.*?Normative [Rr]eferences(?:</a>)?\s*</(?:h2|h3)>)',
-    'INFORMATIVE_REFERENCES': r'(?:<(?:h2|h3)[^>]*(?:id="name-informative-references")?[^>]*>.*?Informative References(?:</a>)?\s*</(?:h2|h3)>)',
-    'SECURITY': r'(?:<(?:h2|h3)[^>]*(?:id="name-security-considerations")?[^>]*>(?:\d+\.?&nbsp;)?.*?Security [Cc]onsiderations(?:</a>)?\s*</(?:h2|h3)>)',
-    'REFERENCES': r'(?:<(?:h2|h3)[^>]*(?:id="name-references")?[^>]*>(?:\d+\.?&nbsp;)?.*?References(?:</a>)?\s*</(?:h2|h3)>)',
-    'ACKNOWLEDGEMENTS': r'(?:<(?:h2|h3)[^>]*(?:id="name-acknowledgements")?[^>]*>(?:\d+\.?&nbsp;)?.*?Acknowledgements(?:</a>)?\s*</(?:h2|h3)>)',
+    'INTRODUCTION': r'(?:<(?:h[123])[^>]*(?:id="(?:name-)?introduction")?[^>]*>(?:\d+\.?&nbsp;)?.*?Introduction(?:</a>)?\s*</(?:h[123])>)',
+    'NORMATIVE_REFERENCES': r'(?:<(?:h[123])[^>]*(?:id="(?:name-)?normative-references(?:-\d+)?")?[^>]*>.*?Normative [Rr]eferences(?:</a>)?\s*</(?:h[123])>)',
+    'INFORMATIVE_REFERENCES': r'(?:<(?:h[123])[^>]*(?:id="(?:name-)?informative-references")?[^>]*>.*?Informative [Rr]eferences(?:</a>)?\s*</(?:h[123])>)',
+    'SECURITY': r'(?:<(?:h[123])[^>]*(?:id="(?:name-)?security-considerations")?[^>]*>(?:\d+\.?&nbsp;)?.*?Security [Cc]onsiderations(?:</a>)?\s*</(?:h[123])>)',
+    'REFERENCES': r'(?:<(?:h[123])[^>]*(?:id="(?:name-)?references")?[^>]*>(?:\d+\.?&nbsp;)?.*?References(?:</a>)?\s*</(?:h[123])>)',
+    'ACKNOWLEDGEMENTS': r'(?:<(?:h[123])[^>]*(?:id="(?:name-)?acknowledg[^"]*")?[^>]*>(?:(?:Annex|Appendix)\s+[A-Z]\s*(?:\([^)]*\))?\s*)?(?:\d+\.?&nbsp;)?.*?Acknowledge?ments?(?:</a>)?\s*</(?:h[123])>)',
     'REF': r'(?:<dt\s+id="([^"]+)">[^<]*</dt>\s*<dd>.*?<a\s+href="([^"]+)")|(?:<tr><td[^>]*><a\s+name="([^"]+)">\[([^]]+)\]</a></td>\s*<td[^>]*>.*?<a\s+href="([^"]+)")',
-    'NOTICES': r'(?:<h3>Appendix C\.&nbsp;\s*Notices</h3>|<a href="#name-notices" class="section-name selfRef">Notices</a>)',
+    'NOTICES': r'(?:<h3>Appendix C\.&nbsp;\s*Notices</h3>|<a href="#name-notices" class="section-name selfRef">Notices</a>|<h2[^>]*id="name-notices"[^>]*>\s*Notices\s*</h2>)',
     'COPYRIGHT': r'Copyright \(c\) (\d{4}) The OpenID Foundation',
-    'AUTHORS_DIV': r'<dd class="authors">(.*?)</dd>',
+    'AUTHORS_DIV': r'<dd class="authors?">(.*?)</dd>',
     'AUTHOR_DIV': r'<div class="author">\s*<div class="author-name">(.*?)</div>\s*<div class="org">(.*?)</div>\s*</div>',
     'AUTHORS_TABLE': r'<table width="99%" border="0" cellpadding="0" cellspacing="0">\s*<tbody>(.*?)</tbody>\s*</table>',
     'AUTHOR_TABLE_ROW': r'<tr><td class="author-text">&nbsp;</td>\s*<td class="author-text">(.*?)</td></tr>\s*<tr><td class="author-text">&nbsp;</td>\s*<td class="author-text">(.*?)</td></tr>',
     'PUBLISHED_DATE': r'<dd class="published">\s*<time datetime="(\d{4}-\d{2}-\d{2})"',
-    'DOCUMENT_HISTORY': r'(?:<section id="appendix-[A-Z]">\s*<h2 id="name-document-history">\s*<a href="#appendix-[A-Z]" class="section-number selfRef">Appendix [A-Z]\. </a><a href="#name-document-history" class="section-name selfRef">Document [Hh]istory</a>\s*</h2>|<h1 id="rfc\.appendix\.[A-Z]">\s*<a href="#rfc\.appendix\.[A-Z]">Appendix [A-Z]\.</a>\s*<a href="#document-history" id="document-history">Document History</a>\s*</h1>|<h3>Appendix [A-Z]\.&nbsp;\s*Document History</h3>)(.*?)(?:</section>|<h1|<h3)',
+    'DOCUMENT_HISTORY': r'(?:<section id="appendix-[A-Z]">\s*<h2 id="name-document-history">\s*<a href="#appendix-[A-Z]" class="section-number selfRef">Appendix [A-Z]\. </a><a href="#name-document-history" class="section-name selfRef">Document [Hh]istory</a>\s*</h2>|<h1 id="rfc\.appendix\.[A-Z]">\s*<a href="#rfc\.appendix\.[A-Z]">Appendix [A-Z]\.</a>\s*<a href="#document-history" id="document-history">Document History</a>\s*</h1>|<h3>Appendix [A-Z]\.&nbsp;\s*Document History</h3>|<div id="document-history">\s*<h2 id="name-document-history">|<h1[^>]*id="[^"]*document-history"[^>]*>(?:Appendix\s+[A-Z]\s*\([^)]*\)\s*)?Document\s+History\s*</h1>)(.*?)(?:</section>|<h1|<h3|<div\s+id=)',
     'HEADER_DATE': r'<tr><td class="header">&nbsp;</td><td class="header">(\w+ \d{1,2}, \d{4})</td></tr>'
 }
 
@@ -447,8 +447,8 @@ def content_authors(content, debug=False):
     result = {"authors": [], "debug": {}}
     soup = BeautifulSoup(content, 'html.parser')
     
-    # Check for authors in div format
-    authors_div = soup.find('dd', class_='authors')
+    # Check for authors in div format (class="authors" or class="author")
+    authors_div = soup.find('dd', class_='authors') or soup.find('dd', class_='author')
     if authors_div:
         author_divs = authors_div.find_all('div', class_='author')
         for div in author_divs:
@@ -470,12 +470,12 @@ def content_authors(content, debug=False):
                     name_row = rows[i]
                     org_row = rows[i+1]
                     
-                    name_cell = name_row.find_all('td', class_='author-text')[-1]  # Get the last td
-                    org_cell = org_row.find_all('td', class_='author-text')[-1]  # Get the last td
-                    
-                    if name_cell and org_cell:
-                        name = name_cell.text.strip()
-                        org = org_cell.text.strip()
+                    name_cells = name_row.find_all('td', class_='author-text')
+                    org_cells = org_row.find_all('td', class_='author-text')
+
+                    if name_cells and org_cells:
+                        name = name_cells[-1].text.strip()
+                        org = org_cells[-1].text.strip()
                         if name or org:
                             result["authors"].append({"name": name, "organization": org})
     

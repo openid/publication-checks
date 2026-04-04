@@ -178,10 +178,10 @@ class TestVerifiedClaimsSpec:
         result = spec_validator.content_struct(self.content)
         assert result["structure"]["ABSTRACT"] is False
 
-    def test_acknowledgements_missing_due_to_nonstandard_heading(self):
-        """Uses 'Acknowledgement' (singular) inside 'Annex A (Informative)'."""
+    def test_acknowledgements_detected(self):
+        """Uses 'Acknowledgement' (singular) inside 'Annex A (Informative)' — now detected."""
         result = spec_validator.content_struct(self.content)
-        assert result["structure"]["ACKNOWLEDGEMENTS"] is False
+        assert result["structure"]["ACKNOWLEDGEMENTS"] is True
 
     def test_introduction_present(self):
         result = spec_validator.content_struct(self.content)
@@ -210,9 +210,21 @@ def test_process_py_on_pr161(tmp_path, pr161_files):
     - Both: final spec already exists (title should use errata language)
     - Both: references check fails (openid.net/wg/ekyc-ida/references/ returns 404)
     - Both: missing ABSTRACT (xml2rfc format gap)
-    - Verified Claims only: also missing ACKNOWLEDGEMENTS (non-standard heading)
     """
-    repo_path, scripts_path = create_test_repo(tmp_path, pr161_files)
+    # Seed CSV with the final specs (so "final already exists" check fires)
+    # but without the draft filenames themselves (so duplicate check passes).
+    csv_content = (
+        "Filename,Date,Size\n"
+        "openid-connect-4-identity-assurance-1_0-final.html,2025-06-01,300K\n"
+        "openid-connect-4-identity-assurance-1_0-16.html,2025-03-01,280K\n"
+        "openid-connect-4-identity-assurance-1_0-16.zip,2025-03-01,500K\n"
+        "openid-ida-verified-claims-1_0-final.html,2025-06-01,150K\n"
+        "openid-ida-verified-claims-1_0-02.html,2025-01-15,140K\n"
+        "openid-ida-verified-claims-1_0-02.zip,2025-01-15,300K\n"
+    )
+    repo_path, scripts_path = create_test_repo(
+        tmp_path, pr161_files, spec_list_csv_content=csv_content,
+    )
 
     result = run_python_script("process.py", repo_path, scripts_path)
 
@@ -232,8 +244,7 @@ def test_process_py_on_pr161(tmp_path, pr161_files):
         "Previous version",                             # both: prev version had .zip
         "final spec already exists",                    # both: should use errata title
         "Problem with References",                      # both: 404 on wg references URL
-        "Missing sections: ABSTRACT",                   # IDA: xml2rfc format gap
-        "Missing sections: ABSTRACT, ACKNOWLEDGEMENTS", # Verified Claims: also missing ack
+        "Missing sections: ABSTRACT",                   # both: xml2rfc format gap
         "did not pass all checks",                      # both: summary line
     ]
 
@@ -287,7 +298,10 @@ def test_publish_draft_errata_ida_spec(tmp_path, pr161_files):
             else:
                 ida_files[k] = v
 
-    repo_path, scripts_path = create_test_repo(tmp_path, ida_files)
+    csv_content = "Filename,Date,Size\n"
+    repo_path, scripts_path = create_test_repo(
+        tmp_path, ida_files, spec_list_csv_content=csv_content,
+    )
     to_publish = repo_path / "to-publish"
     to_publish.mkdir(exist_ok=True)
 

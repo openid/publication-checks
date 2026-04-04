@@ -124,7 +124,13 @@ def test_draft_rejected_when_final_exists_e2e(tmp_path):
         "ekyc-ida/openid-connect-4-identity-assurance-1_0-18.html": html,
         "ekyc-ida/openid-connect-4-identity-assurance-1_0-18.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    _csv_with_final = (
+        "Filename,Date,Size\n"
+        "openid-connect-4-identity-assurance-1_0-final.html,2024-01-15,50K\n"
+    )
+    repo_path, scripts_path = create_test_repo(
+        tmp_path, spec_files, spec_list_csv_content=_csv_with_final,
+    )
 
     result = run_python_script("process.py", repo_path, scripts_path)
 
@@ -151,7 +157,13 @@ def test_draft_errata_accepted_e2e(tmp_path):
         "ekyc-ida/openid-connect-4-identity-assurance-1_0-01.html": html,
         "ekyc-ida/openid-connect-4-identity-assurance-1_0-01.md": "# Spec\n",
     }
-    repo_path, scripts_path = create_test_repo(tmp_path, spec_files)
+    _csv_with_final = (
+        "Filename,Date,Size\n"
+        "openid-connect-4-identity-assurance-1_0-final.html,2024-01-15,50K\n"
+    )
+    repo_path, scripts_path = create_test_repo(
+        tmp_path, spec_files, spec_list_csv_content=_csv_with_final,
+    )
 
     result = run_python_script("process.py", repo_path, scripts_path)
 

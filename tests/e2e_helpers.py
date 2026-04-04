@@ -85,7 +85,8 @@ def _ensure_python_symlink(directory: Path) -> None:
 def create_test_repo(
     tmp_path: Path,
     spec_files: Dict[str, str],
-    spec_list_csv_content: Optional[str] = None,
+    *,
+    spec_list_csv_content: str,
 ) -> tuple[Path, Path]:
     """Set up a temporary git repo + scripts directory for e2e testing.
 
@@ -97,8 +98,9 @@ def create_test_repo(
         Mapping of *relative* paths (e.g. ``"connect/spec-1_0-01.html"``)
         to file content strings.  Directories are created as needed.
     spec_list_csv_content:
-        If provided, written to ``openid-workflow/spec-list.csv`` so that the
-        ``-check-draft`` CLI call can work without network access.
+        Written to ``openid-workflow/spec-list.csv`` so that the
+        ``-check-draft`` CLI call works without network access.
+        At minimum pass ``"Filename,Date,Size\\n"`` for an empty list.
 
     Returns
     -------
@@ -122,8 +124,7 @@ def create_test_repo(
     _ensure_python_symlink(scripts_path)
 
     # --- Pre-seed spec-list.csv ------------------------------------------
-    if spec_list_csv_content is not None:
-        (scripts_path / "spec-list.csv").write_text(spec_list_csv_content)
+    (scripts_path / "spec-list.csv").write_text(spec_list_csv_content)
 
     # --- Initialise the git repository -----------------------------------
     _git = lambda *args: subprocess.run(
