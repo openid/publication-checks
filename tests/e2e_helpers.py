@@ -234,6 +234,8 @@ def run_python_script(
     env = os.environ.copy()
     # Use pre-seeded spec-list.csv instead of fetching from network
     env["SKIP_CSV_FETCH"] = "1"
+    # Mock URL accessibility checks (returns True without network)
+    env["MOCK_URL_CHECK"] = "1"
     if env_overrides:
         env.update(env_overrides)
 
