@@ -142,6 +142,9 @@ def test_multiple_wg_dirs_fails(tmp_path, run_process):
 
     assert result.returncode == 1
     assert "More than one WG sub-directory" in result.stdout
+    assert "connect, fapi" in result.stdout
+    # Early-exit: per-file processing must not have started (issue #171)
+    assert "Processing file:" not in result.stdout
 
 
 

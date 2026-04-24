@@ -148,11 +148,13 @@ def main() -> int:
 
     # ---- Check only one WG sub-directory --------------------------------
     print(f"Sub-Directories: {len(set(subdirectories))}")
-    wg_fails = False
     unique_dirs = sorted(set(subdirectories))
     if len(unique_dirs) != 1:
-        echo_error("FAIL: More than one WG sub-directory updated.")
-        wg_fails = True
+        echo_error(
+            "FAIL: More than one WG sub-directory updated in a single PR "
+            f"({', '.join(unique_dirs)}). Please split into one PR per Working Group."
+        )
+        return 1
 
     # ---- Check WG directory is a known one --------------------------------
     # The known WG directories are the actual directories in the repo root,
@@ -186,7 +188,7 @@ def main() -> int:
                 f"FAIL: '{wg_dir}' is not a recognised Working Group directory. "
                 f"Known directories: {', '.join(sorted(known_dirs))}"
             )
-            wg_fails = True
+            return 1
 
     # ---- Process each changed HTML file ---------------------------------
     any_fails = False
@@ -619,7 +621,7 @@ def main() -> int:
     # ---- Final summary ---------------------------------------------------
     print("All checks completed")
 
-    if any_fails or wg_fails:
+    if any_fails:
         echo_error(
             "Process exiting in a fail state - one or more of the submitted "
             "html documents failed at least one check"
