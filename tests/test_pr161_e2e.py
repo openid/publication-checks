@@ -226,7 +226,12 @@ def test_process_py_on_pr161(tmp_path, pr161_files):
         tmp_path, pr161_files, spec_list_csv_content=csv_content,
     )
 
-    result = run_python_script("process.py", repo_path, scripts_path)
+    # Fixture specs are published 2026-03-26 — pin "today" within the 10-day
+    # window so the date check doesn't fail as wall-clock time advances.
+    result = run_python_script(
+        "process.py", repo_path, scripts_path,
+        env_overrides={"OVERRIDE_TODAY": "2026-03-30"},
+    )
 
     assert result.returncode == 1, (
         f"Expected exit 1 but got {result.returncode}.\n"
