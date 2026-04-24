@@ -190,6 +190,25 @@ def main() -> int:
             )
             return 1
 
+    # ---- Reject unversioned HTML filenames ------------------------------
+    # Unversioned files (e.g. foo-1_0.html) must only be produced by publish.py
+    # when the PR is merged — users should always submit versioned files
+    # (-NN, -final, -errataN, -IDN). Without this check, they fall through to
+    # a misleading "source file missing" error (issue #175).
+    unversioned = [
+        f for f in changed_files
+        if spec_validator.filename_state(os.path.basename(f))["state"] == "CURRENT"
+    ]
+    if unversioned:
+        for f in unversioned:
+            echo_error(
+                f"FAIL: {f} is an unversioned filename. Do not submit unversioned "
+                "HTML files — they are produced automatically from the versioned "
+                "file when the PR is merged. Submit a versioned filename with a "
+                "-NN (draft), -final, -errataN, or -IDN suffix."
+            )
+        return 1
+
     # ---- Process each changed HTML file ---------------------------------
     any_fails = False
 

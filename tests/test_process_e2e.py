@@ -148,6 +148,40 @@ def test_multiple_wg_dirs_fails(tmp_path, run_process):
 
 
 
+def test_unversioned_filename_fails(tmp_path, run_process):
+    """An unversioned HTML file (e.g. foo-1_0.html) must fail early with a
+    clear error (issue #175) rather than falling through to the misleading
+    'Either Markdown or XML Source is required' message."""
+    today = today_str()
+    html = _build_spec_html(
+        title="OpenID Financial-grade API - Part 2 1.0 - Draft 11",
+        date=today,
+        year=today[:4],
+        include_history=True,
+        include_notices=True,
+        include_authors=True,
+        include_all_sections=True,
+    )
+    spec_files = {
+        "fapi/openid-financial-api-part-2-1_0-11.html": html,
+        "fapi/openid-financial-api-part-2-1_0-11.md": "# Test\n",
+        # Mistakenly added unversioned copy:
+        "fapi/openid-financial-api-part-2-1_0.html": html,
+    }
+    repo_path, scripts_path = create_test_repo(
+        tmp_path, spec_files, spec_list_csv_content=_DEFAULT_CSV,
+    )
+
+    result = run_process(repo_path, scripts_path)
+
+    assert result.returncode == 1
+    assert "is an unversioned filename" in result.stdout
+    assert "openid-financial-api-part-2-1_0.html" in result.stdout
+    # Must not reach the old misleading message
+    assert "Either Markdown or XML Source is required" not in result.stdout
+
+
+
 def test_missing_source_fails(tmp_path, run_process):
     """HTML without a .md or .xml companion should fail."""
     today = today_str()
