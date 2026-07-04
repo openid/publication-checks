@@ -54,6 +54,29 @@ def echo_info(msg: str) -> None:
     print(f"{CYAN}{msg}{NC}")
 
 
+def report_reference_results(file, ref_result):
+    """Report the outcome of the reference URL check; returns True if the file fails.
+
+    Inaccessible URLs are a failure. Unverified URLs (the site blocks automated
+    requests and the Internet Archive could not be reached to confirm a
+    snapshot) only produce a warning and do not block publication.
+    """
+    inaccessible = sorted(set(ref_result.get("inaccessible_urls") or []))
+    unverified = sorted(set(ref_result.get("unverified_urls") or []))
+    failed = ref_result.get("all_accessible") is False
+    if failed:
+        echo_error(f"FAIL: Problem with References in {file}. These referenced URLs are not accessible: {', '.join(inaccessible)}")
+    if unverified:
+        echo_warn(
+            f"WARNING: Could not verify these referenced URLs in {file}: {', '.join(unverified)}. "
+            "The site blocks automated requests (HTTP 403/429) and the Internet Archive could not be reached to confirm a snapshot. "
+            "Please verify the links manually in a browser."
+        )
+    if not failed and not unverified:
+        echo_good(f"PASS: References in {file} is good")
+    return failed
+
+
 def final_exists_in_csv(unversioned_name, csv_path):
     """Check whether a -final.html spec exists in the CSV for the given base name."""
     final_pattern = re.compile(re.escape(unversioned_name) + r"-final\.html")
@@ -548,11 +571,8 @@ def main() -> int:
         print("Checking references")
         # -- References (with URL check) -----------------------------------
         ref_result = spec_validator.content_ref(content, check_url=True, debug=debug)
-        if ref_result.get("all_accessible") is False:
-            echo_error(f"FAIL: Problem with References in {file}. One or more referenced URLs are not accessible - see the log above for details.")
+        if report_reference_results(file, ref_result):
             doc_fails = True
-        else:
-            echo_good(f"PASS: References in {file} is good")
 
         print("Checking reference URLs")
         # -- OpenID references should use canonical URLs ---
