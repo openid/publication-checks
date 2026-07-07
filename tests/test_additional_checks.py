@@ -42,6 +42,27 @@ class TestCheckDraftDisclaimer:
         assert spec_validator.check_draft_disclaimer("<html>clean</html>") is False
 
 
+class TestCheckOidcUsage:
+    def test_clean(self):
+        assert spec_validator.check_oidc_usage("<html>Uses OpenID Connect throughout</html>") == []
+
+    def test_prose_occurrence(self):
+        assert spec_validator.check_oidc_usage("This spec builds on OIDC concepts.") == [1]
+
+    def test_citation_label(self):
+        assert spec_validator.check_oidc_usage("as defined in [OIDC] Section 3") == [1]
+
+    def test_lowercase_not_matched(self):
+        assert spec_validator.check_oidc_usage('<a href="https://example.com/oidc/callback">') == []
+
+    def test_embedded_word_not_matched(self):
+        assert spec_validator.check_oidc_usage("OIDC4VP and XOIDC are other things") == []
+
+    def test_multiple_lines(self):
+        content = "line one OIDC\nclean line\n[OIDC] again\n"
+        assert spec_validator.check_oidc_usage(content) == [1, 3]
+
+
 class TestCheckNoncanonicalRefs:
     def test_clean(self):
         assert spec_validator.check_noncanonical_refs('<a href="https://openid.net/specs/foo.html">') == []

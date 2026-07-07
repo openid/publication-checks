@@ -497,6 +497,29 @@ def main() -> int:
         else:
             echo_good(f"PASS: No IETF Trust IPR boilerplate in {file}")
 
+        print("Checking for 'OIDC' usage")
+        # -- 'OIDC' must not be used; the official name is 'OpenID Connect' --
+        oidc_lines = spec_validator.check_oidc_usage(content)
+        if oidc_lines:
+            lines_str = ", ".join(str(n) for n in oidc_lines[:10])
+            if len(oidc_lines) > 10:
+                lines_str += f" (+{len(oidc_lines) - 10} more)"
+            if state in ("FINAL", "ERRATA"):
+                echo_error(
+                    f"FAIL: {file} contains 'OIDC' (HTML lines {lines_str}). "
+                    "For branding reasons OIDF specs must use the official name 'OpenID Connect', "
+                    "not the unofficial abbreviation 'OIDC'."
+                )
+                doc_fails = True
+            else:
+                echo_warn(
+                    f"WARNING: {file} contains 'OIDC' (HTML lines {lines_str}). "
+                    "For branding reasons please replace with the official name 'OpenID Connect' "
+                    "before final publication."
+                )
+        else:
+            echo_good(f"PASS: No 'OIDC' in {file}")
+
         print("Checking title consistency")
         # -- Title consistency (<title> vs <h1>) ----------------------------
         title_result = spec_validator.content_title(content, debug)

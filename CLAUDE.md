@@ -67,6 +67,7 @@ When adding a new check: if it examines content → add to spec_validator. If it
 - Publication date within 10 days
 - No IETF Trust IPR boilerplate (fail for Final/Errata, warn for drafts)
 - No draft disclaimer in Final/Errata specs
+- No 'OIDC' abbreviation - the official name 'OpenID Connect' is required for branding reasons (whole-word, case-sensitive match in the HTML; fail for Final/Errata, warn for drafts)
 - References use canonical openid.net/specs/ URLs (warning)
 - WG directory is a recognised one (checked against origin/main)
 
