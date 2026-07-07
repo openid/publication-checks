@@ -37,6 +37,27 @@ YELLOW = "\033[0;33m"
 CYAN = "\033[0;36m"
 NC = "\033[0m"
 
+# ---------------------------------------------------------------------------
+# Allowed workgroup metadata values per WG directory, seeded from the values
+# used in already-published specs (issue publication#192). Compared
+# case-insensitively. Regenerate the observed values with:
+#   grep -h -o '<dd class="workgroup">[^<]*' sync/specs/*.html | sed 's/.*>//' | sort -u
+# in the publication repo.
+# ---------------------------------------------------------------------------
+WG_WORKGROUP_NAMES = {
+    "authzen": {"OpenID AuthZEN"},
+    "connect": {"connect", "OpenID Connect", "OpenID Connect A/B",
+                "OpenID Connect Working Group"},
+    "digital-credentials-protocols": {"Digital Credentials Protocols",
+                                      "OpenID Digital Credentials Protocols"},
+    "ekyc-ida": {"eKYC-IDA", "OpenID eKYC-IDA"},
+    "fapi": {"fapi", "OpenID FAPI"},
+    "igov": {"OpenID iGov Working Group", "OpenID Foundation iGov Working Group"},
+    "ipsie": {"IPSIE Working Group"},
+    "sharedsignals": {"Shared Signals", "Shared Signals and Events",
+                      "Shared Signals and Events Working Group"},
+}
+
 
 def echo_error(msg: str) -> None:
     print(f"{RED}{msg}{NC}")
@@ -586,6 +607,33 @@ def main() -> int:
             )
         else:
             echo_good(f"PASS: No non-canonical OpenID reference URLs in {file}")
+
+        print("Checking workgroup")
+        # -- Workgroup must match the WG directory (issue publication#192) --
+        workgroup = spec_validator.content_workgroup(content)
+        wg_dir = os.path.dirname(file)
+        allowed_workgroups = WG_WORKGROUP_NAMES.get(wg_dir)
+        if not workgroup:
+            echo_warn(
+                f"WARNING: No workgroup found in {file}. The spec source should "
+                f"set the workgroup metadata to the working group's name."
+            )
+        elif allowed_workgroups is None:
+            echo_warn(
+                f"WARNING: No known workgroup names for directory '{wg_dir}' - "
+                f"cannot check workgroup '{workgroup}' in {file}. Please update "
+                f"WG_WORKGROUP_NAMES in publication-checks process.py."
+            )
+        elif workgroup.lower() in {w.lower() for w in allowed_workgroups}:
+            echo_good(f"PASS: Workgroup '{workgroup}' in {file} is valid for the '{wg_dir}' directory")
+        else:
+            echo_error(
+                f"FAIL: {file} has workgroup '{workgroup}', which is not a known "
+                f"workgroup name for the '{wg_dir}' directory. Fix the workgroup "
+                f"in the spec source and regenerate the HTML."
+            )
+            echo_info(f"  Accepted values: {', '.join(sorted(allowed_workgroups))}")
+            doc_fails = True
 
         print("Checking document structure")
         # -- Structure -----------------------------------------------------

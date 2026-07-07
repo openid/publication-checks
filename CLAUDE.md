@@ -69,6 +69,7 @@ When adding a new check: if it examines content → add to spec_validator. If it
 - No draft disclaimer in Final/Errata specs
 - References use canonical openid.net/specs/ URLs (warning)
 - WG directory is a recognised one (checked against origin/main)
+- Workgroup metadata matches the WG directory (checked against WG_WORKGROUP_NAMES in process.py, case-insensitive; missing workgroup or unmapped directory is a warning)
 
 On failure, process.py prints diagnostic details (in cyan) showing what was found vs expected - title/h1 values, detected states, document headings, etc. These appear in the full log but not in the PR comment summary.
 

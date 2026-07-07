@@ -63,7 +63,8 @@ def _oidf_notices_text(year):
 def _build_spec_html(title, year="2026", date="2026-03-20",
                      include_history=True, include_notices=True,
                      include_authors=True, include_all_sections=True,
-                     author_format="div", intended_status=None):
+                     author_format="div", intended_status=None,
+                     workgroup=None):
     """Build a minimal but realistic OpenID spec HTML document for testing."""
     history_section = ""
     if include_history:
@@ -140,6 +141,8 @@ def _build_spec_html(title, year="2026", date="2026-03-20",
     <h1 id="title">{title}</h1>
     {f'<dt class="label-intended-status">Status:</dt>' if intended_status else ''}
     {f'<dd class="intended-status">{intended_status}</dd>' if intended_status else ''}
+    {f'<dt class="label-workgroup">Workgroup:</dt>' if workgroup else ''}
+    {f'<dd class="workgroup">{workgroup}</dd>' if workgroup else ''}
     <dd class="published">
       <time datetime="{date}">{date}</time>
     </dd>
