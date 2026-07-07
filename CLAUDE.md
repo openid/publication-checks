@@ -62,7 +62,7 @@ When adding a new check: if it examines content → add to spec_validator. If it
 - Authors section present with affiliations
 - OIDF notices and license text present
 - Copyright year matches published year
-- All references accessible (HEAD with GET fallback; on 403/429 a URL passes if the Internet Archive has a snapshot, fails if it has none, and warns without failing if the archive is unreachable)
+- All references accessible (HEAD with GET fallback; on 403/429 or a 202 WAF challenge a URL passes if the Internet Archive has a snapshot, fails if it has none, and warns without failing if the archive is unreachable)
 - Required sections present (Abstract, Introduction, References, etc.)
 - Publication date within 10 days
 - No IETF Trust IPR boilerplate (fail for Final/Errata, warn for drafts)

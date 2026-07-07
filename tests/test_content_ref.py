@@ -179,6 +179,31 @@ class TestContentRef:
         assert result["references"][0][2] is True
 
     @responses.activate
+    def test_waf_challenge_202_triggers_archive_fallback(self, draft_html):
+        """HEAD and GET return 202 (AWS WAF JS challenge, e.g. eur-lex.europa.eu)
+        -- same archive fallback as 403."""
+        responses.add(
+            responses.HEAD,
+            "https://www.rfc-editor.org/rfc/rfc2119",
+            status=202,
+        )
+        responses.add(
+            responses.GET,
+            "https://www.rfc-editor.org/rfc/rfc2119",
+            status=202,
+        )
+        responses.add(
+            responses.GET,
+            "https://web.archive.org/web/2/https://www.rfc-editor.org/rfc/rfc2119",
+            status=302,
+            headers={"Location": "https://web.archive.org/web/20260630151745/https://www.rfc-editor.org/rfc/rfc2119"},
+        )
+        result = spec_validator.content_ref(draft_html, check_url=True)
+        assert result["all_accessible"] is True
+        assert result["inaccessible_urls"] == []
+        assert result["unverified_urls"] == []
+
+    @responses.activate
     def test_rate_limited_url_triggers_archive_fallback(self, draft_html):
         """HEAD and GET return 429 (rate limited) -- same archive fallback as 403."""
         responses.add(
