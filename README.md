@@ -25,6 +25,6 @@ E2e tests create temporary git repos and run process.py/publish.py against them.
 
 See [CLAUDE.md](CLAUDE.md) for a detailed list of all checks and the OIDF rules they enforce.
 
-Reference URL checks fall back to the Internet Archive Wayback Machine when a site blocks automated requests (HTTP 403/429): a snapshot means the URL passes, no snapshot means it fails, and an unreachable archive produces a non-blocking warning.
+Reference URL checks fall back to the Internet Archive Wayback Machine when a site blocks automated requests (HTTP 403/429, or a 202 AWS WAF challenge): a snapshot means the URL passes, no snapshot means it fails, and an unreachable archive produces a non-blocking warning.
 
 See [ERROR-MODES.md](https://github.com/openid/publication/blob/main/ERROR-MODES.md) in the publication repo for guidance on fixing each failure.

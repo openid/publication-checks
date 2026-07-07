@@ -447,10 +447,11 @@ def check_url_accessibility(url, debug=False):
         if response.status_code == 200:
             print(f"    GET returned {response.status_code} (OK) for {url}")
             return URL_ACCESSIBLE
-        if response.status_code in (403, 429):
-            # Bot protection (e.g. iso.org's WAF) blocks CI runners with 403/429
-            # even for URLs that work in a browser — verify via the Internet
-            # Archive instead of failing outright.
+        if response.status_code in (202, 403, 429):
+            # Bot protection blocks CI runners even for URLs that work in a
+            # browser: Akamai (e.g. iso.org) returns 403/429, AWS WAF (e.g.
+            # eur-lex.europa.eu) returns 202 with a JS challenge — verify via
+            # the Internet Archive instead of failing outright.
             print(f"    GET returned {response.status_code} (blocked?), checking Internet Archive for {url}")
             wayback_status, snapshot_date = check_wayback_snapshot(url, debug)
             if wayback_status == "snapshot":

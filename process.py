@@ -69,7 +69,7 @@ def report_reference_results(file, ref_result):
     if unverified:
         echo_warn(
             f"WARNING: Could not verify these referenced URLs in {file}: {', '.join(unverified)}. "
-            "The site blocks automated requests (HTTP 403/429) and the Internet Archive could not be reached to confirm a snapshot. "
+            "The site blocks automated requests (HTTP 403/429 or a 202 WAF challenge) and the Internet Archive could not be reached to confirm a snapshot. "
             "Please verify the links manually in a browser."
         )
     if not failed and not unverified:
