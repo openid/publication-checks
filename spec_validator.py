@@ -30,7 +30,15 @@ EXIT_GET_SPEC_LIST_ERROR = 100
 EXIT_GET_SPECS_ERROR = 110
 EXIT_INVALID_DRAFT_FILENAME = 120
 EXIT_STATE_UNKNOWN = 130
-EXIT_DRAFT_FOUND_IN_CSV = 140  
+EXIT_DRAFT_FOUND_IN_CSV = 140
+
+# URL accessibility outcomes
+URL_ACCESSIBLE = "accessible"
+URL_INACCESSIBLE = "inaccessible"
+URL_UNVERIFIED = "unverified"
+
+WAYBACK_ENDPOINT = "https://web.archive.org/web/2/"
+WAYBACK_TIMEOUT = 15
 
 PATTERNS = {
     'CURRENT': r'^((?:[a-z0-9-]+)(?:-[a-z0-9-]+)*-\d+_\d+)\.html$',     
@@ -387,11 +395,43 @@ def content_struct(content, debug=False):
     
     return result
 
+def check_wayback_snapshot(url, debug=False):
+    """Ask the Internet Archive whether it has a snapshot of url.
+
+    Returns ("snapshot", "YYYY-MM-DD" or None), ("no_snapshot", None) or
+    ("error", None). Uses the fast /web/2/ redirect endpoint; unlike the (slow)
+    CDX API it does not filter snapshots by status code, so a redirect could in
+    theory point at a captured error page — accepted trade-off for speed.
+    """
+    if os.environ.get("MOCK_URL_CHECK"):
+        return ("error", None)
+    try:
+        # The target URL is appended raw (not percent-encoded): the Wayback
+        # Machine expects the literal URL as the path suffix.
+        response = requests.get(WAYBACK_ENDPOINT + url, allow_redirects=False, timeout=WAYBACK_TIMEOUT)
+        if response.status_code in (301, 302):
+            match = re.search(r"/web/(\d{14})/", response.headers.get("Location", ""))
+            if match:
+                ts = match.group(1)
+                return ("snapshot", f"{ts[:4]}-{ts[4:6]}-{ts[6:8]}")
+            return ("snapshot", None)
+        if response.status_code == 404:
+            print(f"    Internet Archive has no snapshot of {url}")
+            return ("no_snapshot", None)
+        print(f"    Internet Archive lookup returned {response.status_code} for {url}")
+        return ("error", None)
+    except requests.RequestException as e:
+        print(f"    Error querying Internet Archive for {url} - {str(e)}")
+        return ("error", None)
+
 def check_url_accessibility(url, debug=False):
+    """Check a referenced URL, returning URL_ACCESSIBLE, URL_INACCESSIBLE or
+    URL_UNVERIFIED (blocked by bot protection and the Internet Archive could
+    not be reached to confirm a snapshot)."""
     if os.environ.get("MOCK_URL_CHECK"):
         if debug:
             print(f"  Mocked URL check (accessible): {url}")
-        return True
+        return URL_ACCESSIBLE
     if debug:
         print(f"  Checking URL: {url}")
     try:
@@ -399,20 +439,34 @@ def check_url_accessibility(url, debug=False):
         if response.status_code == 200:
             if debug:
                 print(f"    Status: Accessible (HEAD {response.status_code})")
-            return True
+            return URL_ACCESSIBLE
         # HEAD failed — retry with GET (some servers reject HEAD)
         print(f"    HEAD returned {response.status_code}, retrying with GET for {url}")
         response = requests.get(url, allow_redirects=True, timeout=30, stream=True)
         response.close()
-        is_accessible = response.status_code == 200
-        if is_accessible:
+        if response.status_code == 200:
             print(f"    GET returned {response.status_code} (OK) for {url}")
-        else:
-            print(f"    GET returned {response.status_code} (FAIL) for {url}")
-        return is_accessible
+            return URL_ACCESSIBLE
+        if response.status_code in (403, 429):
+            # Bot protection (e.g. iso.org's WAF) blocks CI runners with 403/429
+            # even for URLs that work in a browser — verify via the Internet
+            # Archive instead of failing outright.
+            print(f"    GET returned {response.status_code} (blocked?), checking Internet Archive for {url}")
+            wayback_status, snapshot_date = check_wayback_snapshot(url, debug)
+            if wayback_status == "snapshot":
+                dated = f" dated {snapshot_date}" if snapshot_date else ""
+                print(f"    Site blocked automated check ({response.status_code}); verified via Internet Archive snapshot{dated} for {url}")
+                return URL_ACCESSIBLE
+            if wayback_status == "no_snapshot":
+                print(f"    GET returned {response.status_code} and the Internet Archive has no snapshot (FAIL) for {url}")
+                return URL_INACCESSIBLE
+            print(f"    GET returned {response.status_code} and the Internet Archive could not be reached (UNVERIFIED) for {url}")
+            return URL_UNVERIFIED
+        print(f"    GET returned {response.status_code} (FAIL) for {url}")
+        return URL_INACCESSIBLE
     except requests.RequestException as e:
         print(f"    Error checking {url} - {str(e)}")
-        return False
+        return URL_INACCESSIBLE
 
 def content_ref(content, check_url=False, debug=False):
     pattern = PATTERNS['REF']
@@ -420,26 +474,37 @@ def content_ref(content, check_url=False, debug=False):
     references = []
     debug_info = []
     all_accessible = True
-    
+    inaccessible_urls = []
+    unverified_urls = []
+
     for match in matches:
         if match[0]:  # <dt>/<dd> format
             id_value, href = match[0], match[1]
         else:  # table format
             id_value, href = match[2], match[4]
-        
+
         if check_url:
-            is_accessible = check_url_accessibility(href, debug)
+            status = check_url_accessibility(href, debug)
+            # An unverified URL (bot-blocked, archive unreachable) is reported
+            # separately as a warning and does not fail the check.
+            is_accessible = status != URL_INACCESSIBLE
             all_accessible &= is_accessible
             references.append((id_value, href, is_accessible))
+            if status == URL_INACCESSIBLE:
+                inaccessible_urls.append(href)
+            elif status == URL_UNVERIFIED:
+                unverified_urls.append(href)
         else:
             references.append((id_value, href))
-        
+
         if debug:
             debug_info.append(match)
-    
+
     return {
         "references": references,
         "all_accessible": all_accessible if check_url else None,
+        "inaccessible_urls": inaccessible_urls if check_url else None,
+        "unverified_urls": unverified_urls if check_url else None,
         "debug": {
             "pattern": pattern,
             "matches": debug_info
