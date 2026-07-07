@@ -456,6 +456,37 @@ def main() -> int:
                 echo_error(f"FAIL: {file} is an Implementers Draft but does not have a Document History section. Drafts require a history section listing changes.")
                 _show_history_diagnostic()
                 doc_fails = True
+
+            # An Implementers Draft cannot follow a Final: post-final
+            # changes must be published as errata.
+            if final_exists_in_csv(unversioned_name, csv_path):
+                echo_error(
+                    f"FAIL: {file} is an Implementers Draft but a Final spec already exists "
+                    "on openid.net. Post-final changes must include errata language in the "
+                    "title, e.g. 'Spec Name 1.0 - Draft NN incorporating errata set N'"
+                )
+                doc_fails = True
+
+            # Check sequential Implementers Draft numbering. Warning only:
+            # for many published specs the early IDs are not present under
+            # -IDN naming on openid.net.
+            id_num_match = re.search(r'-ID(\d+)\.html$', base_html)
+            if id_num_match:
+                id_num = int(id_num_match.group(1))
+                if id_num > 1:
+                    prev_id = f"{unversioned_name}-ID{id_num - 1}.html"
+                    try:
+                        with open(csv_path, "r", newline="") as csvf:
+                            csv_content = csvf.read()
+                        if prev_id in csv_content:
+                            echo_good("PASS: Implementers Draft numbering is sequential")
+                        else:
+                            echo_warn(
+                                f"WARNING: Previous Implementers Draft {prev_id} not found in published specs. "
+                                "Implementers Draft numbers should be sequential."
+                            )
+                    except FileNotFoundError:
+                        pass
         elif state in ("ERRATA", "DRAFT_ERRATA"):
             echo_good(f"Document is in {state} state")
 
@@ -476,6 +507,42 @@ def main() -> int:
                 else:
                     echo_error(f"FAIL: {file} is an approved errata but contains a Document History section. Remove the history section before publishing.")
                     doc_fails = True
+
+                # Approved errata are published as Final Specifications
+                # Incorporating Errata Corrections, so like -final specs the
+                # header must indicate Status: Final.
+                if re.search(spec_validator.PATTERNS['FINAL_CONTENT'], content, re.IGNORECASE | re.DOTALL):
+                    echo_good("PASS: Document header contains 'Status: Final'")
+                else:
+                    echo_error(
+                        f"FAIL: {file} is an approved errata but the document header "
+                        f"does not contain 'Status: Final'. Add <dd class=\"status\">Final</dd> or "
+                        f"<td class=\"header\">Final</td> to the document header."
+                    )
+                    doc_fails = True
+
+                # Check sequential errata set numbering. Unlike draft
+                # numbers (where a skipped number only warns), errata sets
+                # are never skipped, so this is a hard failure.
+                errata_num_match = re.search(r'-errata(\d+)\.html$', base_html)
+                if errata_num_match:
+                    errata_num = int(errata_num_match.group(1))
+                    if errata_num > 1:
+                        prev_errata = f"{unversioned_name}-errata{errata_num - 1}.html"
+                        try:
+                            with open(csv_path, "r", newline="") as csvf:
+                                csv_content = csvf.read()
+                            if prev_errata in csv_content:
+                                echo_good("PASS: Errata set numbering is sequential")
+                            else:
+                                echo_error(
+                                    f"FAIL: {file} is errata set {errata_num} but the previous "
+                                    f"errata set {prev_errata} was not found on openid.net. "
+                                    "Errata set numbers must be sequential."
+                                )
+                                doc_fails = True
+                        except FileNotFoundError:
+                            pass
 
             # Both ERRATA and DRAFT_ERRATA require a predecessor final spec
             if final_exists_in_csv(unversioned_name, csv_path):
