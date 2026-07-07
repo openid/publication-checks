@@ -236,6 +236,7 @@ def test_approved_errata_accepted(tmp_path, run_process):
         include_notices=True,
         include_authors=True,
         include_all_sections=True,
+        intended_status="Final",
     )
     spec_files = {
         "connect/openid-connect-test-1_0-errata1.html": html,
