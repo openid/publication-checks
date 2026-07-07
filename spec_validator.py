@@ -633,6 +633,11 @@ def check_draft_disclaimer(content):
     return _DRAFT_DISCLAIMER in content
 
 
+def check_oidc_usage(content):
+    """Find lines containing whole-word 'OIDC' (case-sensitive). Returns list of 1-based line numbers."""
+    return [i for i, line in enumerate(content.splitlines(), 1) if re.search(r'\bOIDC\b', line)]
+
+
 def check_noncanonical_refs(content):
     """Find references using openid.github.io or openid.bitbucket.io instead of openid.net/specs/."""
     urls = re.findall(r'href="(https?://openid\.(?:github|bitbucket)\.io/[^"]*)"', content)
