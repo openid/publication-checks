@@ -639,6 +639,12 @@ def check_noncanonical_refs(content):
     return urls
 
 
+def content_workgroup(content):
+    """Extract the workgroup from <dd class="workgroup">...</dd>. Returns the string or None."""
+    m = re.search(r'<dd class="workgroup">\s*([^<]*?)\s*</dd>', content)
+    return m.group(1) if m else None
+
+
 def check_md_includes(md_content):
     """Check if markdown content references external files via include directives."""
     return bool(
