@@ -191,12 +191,25 @@ def run_shell_script(
     )
 
 
+def strip_ansi(text):
+    return re.sub(r'\x1b\[[0-9;]*m', '', text)
+
+
+def fail_lines(stdout):
+    """FAIL: lines of a script's output, with colour codes removed."""
+    return [line.strip() for line in strip_ansi(stdout).splitlines() if line.strip().startswith("FAIL:")]
+
+
+def warn_lines(stdout):
+    """WARNING: lines of a script's output, with colour codes removed."""
+    return [line.strip() for line in strip_ansi(stdout).splitlines() if line.strip().startswith("WARNING:")]
+
+
 def assert_no_unexpected_fails(result):
     """Assert that a script's output contains no FAIL: lines."""
-    clean = re.sub(r'\x1b\[[0-9;]*m', '', result.stdout)
-    fail_lines = [line.strip() for line in clean.splitlines() if line.strip().startswith("FAIL:")]
-    assert not fail_lines, (
-        f"Unexpected failures:\n" + "\n".join(f"  {f}" for f in fail_lines)
+    unexpected = fail_lines(result.stdout)
+    assert not unexpected, (
+        "Unexpected failures:\n" + "\n".join(f"  {f}" for f in unexpected)
     )
 
 

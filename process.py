@@ -112,10 +112,22 @@ def final_exists_in_csv(unversioned_name, csv_path):
     return False
 
 
+def _n_links(count):
+    return f"{count} link{'s' if count != 1 else ''}"
+
+
+def _first_few(items, limit=5, sep=", "):
+    """Join up to `limit` items, noting how many were left out."""
+    shown = sep.join(items[:limit])
+    if len(items) > limit:
+        shown += f" (+{len(items) - limit} more)"
+    return shown
+
+
 def _show_history_diagnostic():
     """Print diagnostic info for missing Document History section."""
     echo_info(
-        "  The Document History section must use one of these heading formats:\n"
+        "  If the section is present, check its heading markup matches one of these formats:\n"
         "    - <section id=\"appendix-X\"><h2 id=\"name-document-history\">...Document History...</h2>\n"
         "    - <h1 id=\"...-document-history\">...Document History</h1>\n"
         "    - <h3>Appendix X.&nbsp; Document History</h3>\n"
@@ -288,8 +300,11 @@ def main() -> int:
                     f"is provided. A .zip containing all source files is required."
                 )
                 doc_fails = True
-            else:
-                echo_warn(f"WARNING: No .zip file for {stem}. A .zip is required if the source has multiple files (e.g., markdown with external includes).")
+            elif not os.path.isfile(md_path):
+                echo_warn(
+                    f"WARNING: No .zip file for {stem}. If the source is split across "
+                    "several files, a .zip containing all of them is required."
+                )
 
         if not os.path.isfile(md_path) and not os.path.isfile(xml_path):
             echo_error(
@@ -353,6 +368,27 @@ def main() -> int:
             print("-" * 114)
             continue
 
+        print("Checking internal links")
+        # -- Absolute links to the document's own editor's draft -----------
+        # Some toolchains emit every internal link as an absolute URL on
+        # openid.github.io. Rewrite them to #fragment links so the section
+        # checks below see the document as a reader would, and fail the
+        # submission because a published spec must not link out to the
+        # editor's draft (issue seen in publication#207).
+        content, self_links = spec_validator.normalise_self_links(content)
+        if self_links:
+            for base_url, count in sorted(self_links.items()):
+                echo_error(
+                    f"FAIL: Internal links in {file} point to its own editor's draft "
+                    f"({base_url}, {_n_links(count)}). The table of contents and cross "
+                    "references must link within the document (href=\"#section\"), "
+                    "otherwise readers of the published spec are sent to the editor's "
+                    "draft. Regenerate the HTML without an absolute base URL."
+                )
+            doc_fails = True
+        else:
+            echo_good(f"PASS: Internal links in {file} stay within the document")
+
         print("Checking document history")
         # -- History section -----------------------------------------------
         history_result = spec_validator.content_history(content, debug)
@@ -395,15 +431,21 @@ def main() -> int:
             r'(?:-\d{1,2}|-final|-errata\d+|-ID\d+)$', '', versioned_name,
         )
 
+        title_result = spec_validator.content_title(content, debug)
+        found_title = title_result["title_tag"] or "(no <title> found)"
+        # True once the state block below has reported that the state could
+        # not be determined, so later checks do not pile on for the same cause.
+        state_unknown = False
+
         print("Checking state and history consistency")
         # -- State / history consistency -----------------------------------
         if state == "UNKNOWN":
             echo_error(f"FAIL: Problem with document titles in {file} so state is UNKNOWN")
             # Show what was found to help diagnose
-            title_diag = spec_validator.content_title(content)
-            echo_info(f"  <title>: {title_diag['title_tag'][:100] if title_diag['title_tag'] else 'not found'}")
-            echo_info(f"  <h1>: {title_diag['h1_title'][:100] if title_diag['h1_title'] else 'not found'}")
+            echo_info(f"  <title>: {title_result['title_tag'][:100] if title_result['title_tag'] else 'not found'}")
+            echo_info(f"  <h1>: {title_result['h1_title'][:100] if title_result['h1_title'] else 'not found'}")
             doc_fails = True
+            state_unknown = True
         elif state == "DRAFT":
             echo_good("Document is in DRAFT state")
             if has_history:
@@ -551,8 +593,16 @@ def main() -> int:
                 echo_error(f"FAIL: {file} is an errata but no predecessor Final spec was found on openid.net. An errata can only be published after the spec has reached Final.")
                 doc_fails = True
         else:
-            echo_error(f"FAIL: Unexpected document state '{state}'. The title should contain 'Draft NN', 'incorporating errata set N', or the header should indicate 'Status: Final' - see ERROR-MODES.md.")
+            expected_draft = f"'Draft {draft_num_match.group(1)}'" if draft_num_match else "'Draft NN'"
+            echo_error(
+                f"FAIL: Cannot tell whether {file} is a draft, Implementer's Draft, "
+                f"Final or errata. Its title is '{found_title}'. A draft's title must end "
+                f"with {expected_draft} (the number in the filename), an errata's title "
+                "must say 'incorporating errata set N', and a Final must have "
+                "'Status: Final' in the document header."
+            )
             doc_fails = True
+            state_unknown = True
 
         print("Checking for draft disclaimer")
         # -- Draft disclaimer must not appear in FINAL or ERRATA -------------
@@ -571,27 +621,22 @@ def main() -> int:
         found_ipr = spec_validator.check_ietf_ipr(content)
         if found_ipr:
             matched = ", ".join(f"'{s}'" for s in found_ipr)
-            if state in ("FINAL", "ERRATA"):
-                echo_error(
-                    f"FAIL: {file} contains IETF Trust IPR boilerplate text ({matched}). "
-                    "OIDF specs must not include IETF IPR notices."
-                )
-                doc_fails = True
-            else:
-                echo_warn(
-                    f"WARNING: {file} contains IETF Trust IPR boilerplate text ({matched}). "
-                    "Please remove before final publication."
-                )
+            echo_error(
+                f"FAIL: {file} contains IETF Internet-Draft boilerplate ({matched}). "
+                "OIDF specs must not include the IETF 'Status of This Memo' or IETF "
+                "copyright notice. If the source is markdown, set ipr = \"none\" and "
+                "remove the [seriesInfo] Internet-Draft block from the front matter, "
+                "then regenerate the HTML."
+            )
+            doc_fails = True
         else:
-            echo_good(f"PASS: No IETF Trust IPR boilerplate in {file}")
+            echo_good(f"PASS: No IETF Internet-Draft boilerplate in {file}")
 
         print("Checking for 'OIDC' usage")
         # -- 'OIDC' must not be used; the official name is 'OpenID Connect' --
         oidc_lines = spec_validator.check_oidc_usage(content)
         if oidc_lines:
-            lines_str = ", ".join(str(n) for n in oidc_lines[:10])
-            if len(oidc_lines) > 10:
-                lines_str += f" (+{len(oidc_lines) - 10} more)"
+            lines_str = _first_few([str(n) for n in oidc_lines], limit=10)
             if state in ("FINAL", "ERRATA"):
                 echo_error(
                     f"FAIL: {file} contains 'OIDC' (HTML lines {lines_str}). "
@@ -610,7 +655,6 @@ def main() -> int:
 
         print("Checking title consistency")
         # -- Title consistency (<title> vs <h1>) ----------------------------
-        title_result = spec_validator.content_title(content, debug)
         if not title_result["match"]:
             echo_error(f"FAIL: Title tag does not match H1 heading in {file}.")
             echo_info(f"  <title>: {title_result['title_tag'][:100] if title_result['title_tag'] else 'not found'}")
@@ -626,6 +670,8 @@ def main() -> int:
         # content_state() already validated the DRAFT_ERRATA combination.
         if state == "DRAFT_ERRATA":
             echo_good(f"PASS: Content matches filename in {file} (DRAFT_ERRATA)")
+        elif state_unknown:
+            echo_info("  Skipping filename/title comparison: the document state could not be determined (see above)")
         else:
             match_result = spec_validator.content_filename_match(content, base_html, debug)
             if not match_result["match"]:
@@ -638,12 +684,12 @@ def main() -> int:
                         f"<td class=\"header\">Final</td> to the document header in {file}."
                     )
                 else:
-                    echo_error(f"FAIL: Content state or version number does not match filename in {file}. For example, spec-1_0-05.html should have 'Draft 05' in the title.")
-                # Always show diagnostics on failure
-                diag = spec_validator.content_filename_match(content, base_html, debug=True)
-                d = diag.get("debug", {})
-                echo_info(f"  Filename '{base_html}' detected as: {d.get('Filename Type', '?')} (number: {d.get('Filename Number', '?')})")
-                echo_info(f"  Content detected as: {d.get('Content Type', '?')} (number: {d.get('Content Number', '?')})")
+                    echo_error(
+                        f"FAIL: Content state or version number does not match filename in {file}. "
+                        f"The filename says {match_result['filename_says']} "
+                        f"but the title '{found_title}' says {match_result['content_says']}. "
+                        "Change the title or the filename so they agree."
+                    )
                 doc_fails = True
             else:
                 echo_good(f"PASS: Content matches filename in {file}")
@@ -661,20 +707,26 @@ def main() -> int:
         print("Checking notices")
         # -- Notices -------------------------------------------------------
         notices_result = spec_validator.content_notices(content, debug)
-        notices_ok = (
-            notices_result["notices"]
-            and notices_result["license_text_present"]
-        )
-        if not notices_ok:
-            echo_error(f"FAIL: Problem with Notices section in {file}. The Notices appendix must contain the OIDF copyright and license text.")
-            if not notices_result["notices"]:
-                echo_info("  Notices section heading not found in the document")
-            if not notices_result["license_text_present"]:
-                echo_info("  OIDF license text not found or incomplete")
-            if notices_result["copyright_year"]:
-                echo_info(f"  Copyright year found: {notices_result['copyright_year']}")
-            if notices_result["published_year"]:
-                echo_info(f"  Published year found: {notices_result['published_year']}")
+        if not notices_result["notices"]:
+            echo_error(
+                f"FAIL: Problem with Notices section in {file}: no 'Notices' heading was found. "
+                "The document needs an appendix headed 'Notices' containing the OIDF "
+                "copyright and license text from the OIDF IPR Policy, section VII."
+            )
+            echo_info(
+                "  Accepted heading markup: <h2 id=\"name-notices\">Notices</h2> (xml2rfc), "
+                "<h3>Appendix C.&nbsp; Notices</h3>, or "
+                "<a href=\"#name-notices\" class=\"section-name selfRef\">Notices</a>"
+            )
+            doc_fails = True
+        elif not notices_result["license_text_present"]:
+            shown = _first_few([f"'{phrase}'" for phrase in notices_result["missing_phrases"]], sep="; ")
+            echo_error(
+                f"FAIL: Problem with Notices section in {file}: the OIDF license text is "
+                f"incomplete. Could not find: {shown}. The Notices must contain the exact "
+                "wording from the OIDF IPR Policy, section VII."
+            )
+            echo_info("  Only text inside <p> paragraphs is compared, after collapsing whitespace and straightening quotes.")
             doc_fails = True
         else:
             echo_good(f"PASS: Notices section in {file} is good")
@@ -687,13 +739,13 @@ def main() -> int:
 
         print("Checking reference URLs")
         # -- OpenID references should use canonical URLs ---
-        non_canonical_urls = spec_validator.check_noncanonical_refs(content)
-        if non_canonical_urls:
-            unique_urls = sorted(set(non_canonical_urls))
-            url_list = ", ".join(unique_urls)
+        non_canonical = spec_validator.check_noncanonical_refs(content)
+        if non_canonical:
+            shown = _first_few([f"{url} ({_n_links(count)})" for url, count in non_canonical])
             echo_warn(
-                f"WARNING: {file} references editor's draft URLs ({url_list}). "
-                "Consider using canonical https://openid.net/specs/ URLs instead."
+                f"WARNING: {file} references editor's draft URLs instead of "
+                f"https://openid.net/specs/: {shown}. Published specs "
+                "should cite the canonical openid.net URL of the referenced spec."
             )
         else:
             echo_good(f"PASS: No non-canonical OpenID reference URLs in {file}")
@@ -719,10 +771,10 @@ def main() -> int:
         else:
             echo_error(
                 f"FAIL: {file} has workgroup '{workgroup}', which is not a known "
-                f"workgroup name for the '{wg_dir}' directory. Fix the workgroup "
-                f"in the spec source and regenerate the HTML."
+                f"workgroup name for the '{wg_dir}' directory. Expected one of: "
+                f"{', '.join(sorted(allowed_workgroups))}. Fix the workgroup in the "
+                "spec source and regenerate the HTML."
             )
-            echo_info(f"  Accepted values: {', '.join(sorted(allowed_workgroups))}")
             doc_fails = True
 
         print("Checking document structure")
@@ -738,14 +790,19 @@ def main() -> int:
         if not struct_ok:
             missing = [s for s in required_sections if not struct_result["structure"].get(s)]
             found = [s for s in required_sections if struct_result["structure"].get(s)]
-            echo_error(f"FAIL: Problem with structure in {file}. Missing sections: {', '.join(missing)}")
+            names = {s: spec_validator.SECTION_DESCRIPTIONS[s][0] for s in required_sections}
+            echo_error(
+                f"FAIL: Problem with structure in {file}. Missing sections: "
+                f"{', '.join(names[s] for s in missing)}. Sections are recognised by "
+                "their headings; the lines below say what was looked for."
+            )
             if found:
-                echo_info(f"  Sections found: {', '.join(found)}")
-            # Show the regex pattern used for each missing section so users
-            # can see exactly what markup the tool is looking for
+                echo_info(f"  Sections found: {', '.join(names[s] for s in found)}")
+            # Say in plain words what markup is expected, and keep the regex so
+            # anyone debugging a near-miss can see exactly what is matched.
             for section in missing:
-                pattern = spec_validator.PATTERNS.get(section, "?")
-                echo_info(f"  Pattern for {section}: {pattern}")
+                echo_info(f"  {names[section]}: looked for {spec_validator.SECTION_DESCRIPTIONS[section][1]}")
+                echo_info(f"    (regex: {spec_validator.PATTERNS.get(section, '?')})")
             doc_fails = True
         else:
             echo_good(f"PASS: Structure of {file} is good")
@@ -784,6 +841,30 @@ def main() -> int:
         else:
             echo_error(f"FAIL: Could not determine publication date in {file}. Ensure the HTML contains a published date element.")
             doc_fails = True
+
+        # -- Copyright year must match the publication year ---------------
+        # Only when a Notices section exists; without one the Notices check
+        # above has already asked for the whole appendix.
+        if notices_result["notices"]:
+            copyright_year = date_result["copyright_date"]
+            if copyright_year == "Copyright date not found":
+                echo_error(
+                    f"FAIL: Could not find 'Copyright (c) YYYY The OpenID Foundation' in the "
+                    f"Notices of {file}. The Notices must start with the OIDF copyright line."
+                )
+                doc_fails = True
+            elif days_old is None:
+                pass  # no publication date: already reported above
+            elif not date_result["years_match"]:
+                published_date = date_result["date"]
+                echo_error(
+                    f"FAIL: Copyright year in the Notices of {file} is {copyright_year} but the "
+                    f"publication date is {published_date}. Update the copyright year to "
+                    f"{published_date[:4]}."
+                )
+                doc_fails = True
+            else:
+                echo_good(f"PASS: Copyright year {copyright_year} in {file} matches the publication date")
 
         # -- Per-file summary ----------------------------------------------
         if doc_fails:

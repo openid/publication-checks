@@ -249,7 +249,7 @@ def test_process_py_on_pr161(tmp_path, pr161_files):
         "Previous version",                             # both: prev version had .zip
         "Final spec already exists",                    # both: should use errata title
         "Problem with References",                      # both: 404 on wg references URL
-        "Missing sections: ABSTRACT",                   # both: xml2rfc format gap
+        "Missing sections: Abstract",                   # both: xml2rfc format gap
         "did not pass all checks",                      # both: summary line
     ]
 
@@ -270,7 +270,7 @@ def test_process_py_on_pr161(tmp_path, pr161_files):
     assert any("references external files" in f for f in fail_lines)
     assert any("Previous version" in f for f in fail_lines)
     assert any("Final spec already exists" in f for f in fail_lines)
-    assert any("Missing sections: ABSTRACT" in f for f in fail_lines)
+    assert any("Missing sections: Abstract" in f for f in fail_lines)
 
 
 # ===================================================================
