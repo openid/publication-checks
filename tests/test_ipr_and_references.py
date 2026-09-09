@@ -47,12 +47,12 @@ def test_ietf_trust_text_in_final_fails(tmp_path):
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 1
-    assert "IETF Trust IPR boilerplate" in result.stdout
+    assert "IETF" in result.stdout
 
 
 
-def test_ietf_trust_text_in_draft_warns(tmp_path):
-    """A DRAFT spec containing IETF Trust IPR boilerplate should warn but pass."""
+def test_ietf_trust_text_in_draft_fails(tmp_path):
+    """A DRAFT spec containing IETF Trust IPR boilerplate must fail too."""
     today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
@@ -71,9 +71,9 @@ def test_ietf_trust_text_in_draft_warns(tmp_path):
     repo_path, scripts_path = create_test_repo(tmp_path, spec_files, spec_list_csv_content="Filename,Date,Size\n")
     result = run_python_script("process.py", repo_path, scripts_path)
 
-    assert result.returncode == 0
-    assert "WARNING" in result.stdout
-    assert "IETF Trust IPR boilerplate" in result.stdout
+    assert result.returncode == 1
+    assert "FAIL:" in result.stdout
+    assert "IETF" in result.stdout
 
 
 
@@ -93,7 +93,7 @@ def test_no_ietf_trust_text_passes(tmp_path):
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 0
-    assert "No IETF Trust IPR boilerplate" in result.stdout
+    assert "No IETF" in result.stdout
 
 
 

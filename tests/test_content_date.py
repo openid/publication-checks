@@ -2,6 +2,8 @@
 
 import textwrap
 
+import pytest
+
 import spec_validator
 
 
@@ -17,6 +19,20 @@ class TestContentDateExtraction:
         """Copyright year is extracted from 'Copyright (c) YYYY The OpenID Foundation'."""
         result, _ = spec_validator.content_date(draft_html)
         assert result["copyright_date"] == "2026"
+
+    @pytest.mark.parametrize("wrapped", [
+        "Copyright\n(c) 2026 The OpenID Foundation",
+        "Copyright (c) 2026\n      The OpenID Foundation",
+        "Copyright (c) 2026 The OpenID\nFoundation",
+        "Copyright (c)\t2026  The  OpenID\n  Foundation",
+    ])
+    def test_copyright_year_found_when_wrapped_across_lines(self, draft_html, wrapped):
+        """A line break or extra whitespace anywhere in the copyright line must not hide the year."""
+        html = draft_html.replace("Copyright (c) 2026 The OpenID Foundation", wrapped)
+        assert html != draft_html
+        result, _ = spec_validator.content_date(html)
+        assert result["copyright_date"] == "2026"
+        assert spec_validator.content_notices(html)["copyright_year"] == 2026
 
     def test_years_match_when_same(self, draft_html):
         """years_match is True when copyright year matches published year."""

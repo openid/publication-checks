@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, date
 import csv
+from collections import Counter
 import io
 import os
 import time
@@ -61,7 +62,7 @@ PATTERNS = {
     'ACKNOWLEDGEMENTS': r'(?:<(?:h[123])[^>]*(?:id="(?:name-)?acknowledg[^"]*")?[^>]*>(?:(?:Annex|Appendix)\s+[A-Z]\s*(?:\([^)]*\))?\s*)?(?:\d+\.?&nbsp;)?.*?Acknowledge?ments?(?:</a>)?\s*</(?:h[123])>)',
     'REF': r'(?:<dt\s+id="([^"]+)">[^<]*</dt>\s*<dd>.*?<a\s+href="([^"]+)")|(?:<tr><td[^>]*><a\s+name="([^"]+)">\[([^]]+)\]</a></td>\s*<td[^>]*>.*?<a\s+href="([^"]+)")',
     'NOTICES': r'(?:<h3>Appendix C\.&nbsp;\s*Notices</h3>|<a href="#name-notices" class="section-name selfRef">Notices</a>|<h2[^>]*id="name-notices"[^>]*>\s*Notices\s*</h2>)',
-    'COPYRIGHT': r'Copyright \(c\) (\d{4}) The OpenID Foundation',
+    'COPYRIGHT': r'Copyright\s+\(c\)\s+(\d{4})\s+The\s+OpenID\s+Foundation',
     'AUTHORS_DIV': r'<dd class="authors?">(.*?)</dd>',
     'AUTHOR_DIV': r'<div class="author">\s*<div class="author-name">(.*?)</div>\s*<div class="org">(.*?)</div>\s*</div>',
     'AUTHORS_TABLE': r'<table width="99%" border="0" cellpadding="0" cellspacing="0">\s*<tbody>(.*?)</tbody>\s*</table>',
@@ -69,6 +70,27 @@ PATTERNS = {
     'PUBLISHED_DATE': r'<dd class="published">\s*<time datetime="(\d{4}-\d{2}-\d{2})"',
     'DOCUMENT_HISTORY': r'(?:<section id="appendix-[A-Z]">\s*<h2 id="name-document-history">\s*<a href="#appendix-[A-Z]" class="section-number selfRef">Appendix [A-Z]\. </a><a href="#name-document-history" class="section-name selfRef">Document [Hh]istory</a>\s*</h2>|<h1 id="rfc\.appendix\.[A-Z]">\s*<a href="#rfc\.appendix\.[A-Z]">Appendix [A-Z]\.</a>\s*<a href="#document-history" id="document-history">Document History</a>\s*</h1>|<h3>Appendix [A-Z]\.&nbsp;\s*Document History</h3>|<div id="document-history">\s*<h2 id="name-document-history">|<h1[^>]*id="[^"]*document-history"[^>]*>(?:(?:Appendix|Annex)\s+[A-Z]\s*(?:\([^)]*\))?\s*)?Document\s+History\s*</h1>)(.*?)(?:</section>|<h1|<h3|<div\s+id=)',
     'HEADER_DATE': r'<tr><td class="header">&nbsp;</td><td class="header">(\w+ \d{1,2}, \d{4})</td></tr>'
+}
+
+# Display name and plain-English description of what each structural
+# PATTERNS entry looks for. Shown to spec editors alongside the raw regex
+# when a required section is not found.
+SECTION_DESCRIPTIONS = {
+    'ABSTRACT': ('Abstract',
+                 'an <h2 id="abstract"> heading containing a link with the text \'Abstract\', '
+                 'or an <h3>Abstract</h3> heading'),
+    'INTRODUCTION': ('Introduction',
+                     "an <h1>, <h2> or <h3> heading containing 'Introduction'"),
+    'REFERENCES': ('References',
+                   "an <h1>, <h2> or <h3> heading containing 'References'"),
+    'NORMATIVE_REFERENCES': ('Normative References',
+                             "an <h1>, <h2> or <h3> heading containing 'Normative References'"),
+    'INFORMATIVE_REFERENCES': ('Informative References',
+                               "an <h1>, <h2> or <h3> heading containing 'Informative References'"),
+    'ACKNOWLEDGEMENTS': ('Acknowledgements',
+                         "an <h1>, <h2> or <h3> heading containing 'Acknowledgements' or 'Acknowledgments'"),
+    'SECURITY': ('Security Considerations',
+                 "an <h1>, <h2> or <h3> heading containing 'Security Considerations'"),
 }
 
 
@@ -155,6 +177,7 @@ def content_notices(content, debug=False):
         "published_year": None,
         "years_match": False,
         "license_text_present": False,
+        "missing_phrases": [],
         "debug": {}
     }
     
@@ -226,6 +249,7 @@ def content_notices(content, debug=False):
             missing_phrases.append(phrase)
     
     result["license_text_present"] = len(missing_phrases) == 0
+    result["missing_phrases"] = missing_phrases
     
     if debug:
         result["debug"]["LICENSE_TEXT"] = {
@@ -638,10 +662,46 @@ def check_oidc_usage(content):
     return [i for i, line in enumerate(content.splitlines(), 1) if re.search(r'\bOIDC\b', line)]
 
 
+_EDITOR_DRAFT_URL = r'https?://openid\.(?:github|bitbucket)\.io/[^"#]*'
+
+
+def normalise_self_links(content):
+    """Rewrite absolute links to the document's own editor's draft as #fragment links.
+
+    Some toolchains emit every internal link (table of contents, cross
+    references, section self-links) as an absolute URL such as
+    href="https://openid.github.io/wg/spec.html#name-notices" instead of
+    href="#name-notices". The document's own URL is taken from its section
+    self-links (xml2rfc marks every heading anchor with class="selfRef"),
+    which can only ever point at the document itself. Links to other
+    editor's drafts are left untouched, even when they use a fragment that
+    also exists in this document.
+
+    Returns (rewritten HTML, {base_url: link_count}).
+    """
+    own_bases = set()
+    for tag in re.findall(r'<a\s[^>]*>', content):
+        if re.search(r'class="[^"]*\bselfRef\b', tag):
+            m = re.search(rf'href="({_EDITOR_DRAFT_URL})#', tag)
+            if m:
+                own_bases.add(m.group(1))
+
+    self_links = {}
+    for base in own_bases:
+        pattern = r'href="' + re.escape(base) + r'#'
+        content, count = re.subn(pattern, 'href="#', content)
+        self_links[base] = count
+    return content, self_links
+
+
 def check_noncanonical_refs(content):
-    """Find references using openid.github.io or openid.bitbucket.io instead of openid.net/specs/."""
-    urls = re.findall(r'href="(https?://openid\.(?:github|bitbucket)\.io/[^"]*)"', content)
-    return urls
+    """Find links to openid.github.io / openid.bitbucket.io instead of openid.net/specs/.
+
+    Fragments are stripped so that many deep links into one editor's draft
+    count as one URL. Returns a sorted list of (url, link_count) tuples.
+    """
+    urls = re.findall(rf'href="({_EDITOR_DRAFT_URL})(?:#[^"]*)?"', content)
+    return sorted(Counter(urls).items())
 
 
 def content_workgroup(content):
@@ -881,6 +941,21 @@ def analyze_file(options, filename=None):
 
     return results, EXIT_SUCCESS
     
+def describe_version(kind, number):
+    """Plain-English description of a detected filename/content version, e.g. 'Draft 02'."""
+    if kind == "DRAFT":
+        return f"Draft {number}" if number else "a draft with no number"
+    if kind == "IMPLEMENTERS":
+        return f"Implementer's Draft {number}" if number else "an Implementer's Draft with no number"
+    if kind == "ERRATA":
+        return f"errata set {number}" if number else "an errata with no set number"
+    if kind == "FINAL":
+        return "Final"
+    if kind == "CURRENT":
+        return f"version {number} with no draft number" if number else "an unversioned document"
+    return "nothing recognisable (no draft number, errata set or Final status)"
+
+
 def content_filename_match(content, filename, debug=False):
     result = {"match": False}
     filename_type = None
@@ -943,6 +1018,9 @@ def content_filename_match(content, filename, debug=False):
         elif filename_number and content_number:
             result["match"] = filename_number == content_number
     
+    result["filename_says"] = describe_version(filename_type, filename_number)
+    result["content_says"] = describe_version(content_type, content_number)
+
     if debug:
         result["debug"] = {
             "Filename Type": filename_type,

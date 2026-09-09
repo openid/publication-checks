@@ -77,8 +77,8 @@ def test_md_with_includes_but_no_zip_fails(tmp_path):
 
 
 
-def test_md_without_includes_no_zip_warns(tmp_path):
-    """If .md has no includes and no .zip, just warn (not fail)."""
+def test_md_without_includes_no_zip_is_fine(tmp_path):
+    """If .md has no includes, no .zip is needed and nothing should be reported."""
     today = today_str()
     html = _build_spec_html(
         title="OpenID Connect Test 1.0 - Draft 01",
@@ -94,8 +94,7 @@ def test_md_without_includes_no_zip_warns(tmp_path):
     result = run_python_script("process.py", repo_path, scripts_path)
 
     assert result.returncode == 0
-    assert "WARNING" in result.stdout
-    assert "No .zip file for" in result.stdout
+    assert "No .zip file for" not in result.stdout
 
 
 

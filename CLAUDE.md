@@ -50,7 +50,7 @@ When adding a new check: if it examines content → add to spec_validator. If it
 ## Checks Performed by process.py
 
 - Filename not already published (duplicate check)
-- Source files exist (.md or .xml required, .zip if md has includes)
+- Source files exist (.md or .xml required, .zip if md has includes; a warning if there is no .md to inspect and no .zip)
 - Companion files match previous version
 - Document state detected and consistent with filename
 - History section present for DRAFT/DRAFT_ERRATA/IMPLEMENTERS, absent for FINAL/ERRATA
@@ -65,14 +65,15 @@ When adding a new check: if it examines content → add to spec_validator. If it
 - All references accessible (HEAD with GET fallback; on 403/429 or a 202 WAF challenge a URL passes if the Internet Archive has a snapshot, fails if it has none, and warns without failing if the archive is unreachable)
 - Required sections present (Abstract, Introduction, References, etc.)
 - Publication date within 10 days
-- No IETF Trust IPR boilerplate (fail for Final/Errata, warn for drafts)
+- No IETF Internet-Draft boilerplate (fail for every state)
 - No draft disclaimer in Final/Errata specs
 - No 'OIDC' abbreviation - the official name 'OpenID Connect' is required for branding reasons (whole-word, case-sensitive match in the HTML; fail for Final/Errata, warn for drafts)
-- References use canonical openid.net/specs/ URLs (warning)
+- Internal links stay within the document: absolute links to the spec's own editor's draft are rewritten to #fragment before the content checks run, and reported as a failure
+- References use canonical openid.net/specs/ URLs (warning; grouped by URL with fragments stripped)
 - WG directory is a recognised one (checked against origin/main)
 - Workgroup metadata matches the WG directory (checked against WG_WORKGROUP_NAMES in process.py, case-insensitive; missing workgroup or unmapped directory is a warning)
 
-On failure, process.py prints diagnostic details (in cyan) showing what was found vs expected - title/h1 values, detected states, document headings, etc. These appear in the full log but not in the PR comment summary.
+On failure, process.py prints diagnostic details (in cyan) showing what was found vs expected - title/h1 values, detected states, document headings, etc. The PR comment built by `publication-checks.yml` nests any indented lines that immediately follow a FAIL/WARNING line under that item, rendered as inline code, so keep diagnostics for a failure directly after its `echo_error`/`echo_warn` call and indent them with two spaces. Wording is aimed at spec editors: say what was found, what was expected, and how to fix it; every FAIL needs a matching entry in `ERROR-MODES.md` in the publication repo.
 
 ## OIDF Publication Rules
 
