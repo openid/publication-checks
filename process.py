@@ -48,6 +48,7 @@ WG_WORKGROUP_NAMES = {
     "authzen": {"OpenID AuthZEN"},
     "connect": {"connect", "OpenID Connect", "OpenID Connect A/B",
                 "OpenID Connect Working Group"},
+    "dchp": {"Digital Credentials Harmonized Presentation"},
     "digital-credentials-protocols": {"Digital Credentials Protocols",
                                       "OpenID Digital Credentials Protocols"},
     "ekyc-ida": {"eKYC-IDA", "OpenID eKYC-IDA"},
