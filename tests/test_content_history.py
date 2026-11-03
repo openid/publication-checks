@@ -73,3 +73,34 @@ class TestContentHistory:
         assert "DOCUMENT_HISTORY" in debug
         assert "pattern" in debug["DOCUMENT_HISTORY"]
         assert debug["DOCUMENT_HISTORY"]["match"] is not None
+
+
+class TestUnnumberedXml2rfcHistory:
+    """xml2rfc output for a {:numbered="false"} appendix has no section-number anchor."""
+
+    UNNUMBERED_HTML = """
+    <!DOCTYPE html>
+    <html><head><title>Test</title></head><body>
+    <div id="document-history">
+    <section id="appendix-D">
+          <h2 id="name-document-history">
+    <a href="#name-document-history" class="section-name selfRef">Document History</a>
+          </h2>
+    <p id="appendix-D-1">-03<a href="#appendix-D-1" class="pilcrow">¶</a></p>
+    <ul class="normal">
+    <li class="normal" id="appendix-D-2.1">Renamed to WISE Profile</li>
+    </ul>
+    </section>
+    </div>
+    <div id="authors-addresses">
+    <section id="appendix-E"><h2 id="name-authors-addresses">Authors' Addresses</h2></section>
+    </div>
+    </body></html>
+    """
+
+    def test_unnumbered_xml2rfc_history_detected(self):
+        result = spec_validator.content_history(self.UNNUMBERED_HTML)
+        assert result["history_present"] is True
+        joined = " ".join(result["history"])
+        assert "-03" in joined
+        assert "Renamed to WISE Profile" in joined
